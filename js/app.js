@@ -5,15 +5,28 @@ import CatalogScreen from '../components/CatalogScreen.js';
 import GenerateScreen from '../components/GenerateScreen.js';
 import ResultScreen from '../components/ResultScreen.js';
 import WorkspaceScreen from '../components/WorkspaceScreen.js';
+import LooksLibraryScreen from '../components/LooksLibraryScreen.js';
 import LoadingOverlay from '../components/LoadingOverlay.js';
 import { CATEGORIES, pieceIsSized } from './catalog-data.js';
 import { copyText, copyImageBlob, composeTryOn } from './clipboard.js';
+import {
+  loadHistory,
+  loadFavorites,
+  addToHistory,
+  removeFromHistory,
+  clearHistory as clearHistoryStore,
+  addFavorite,
+  removeFavorite,
+  isFavorite,
+  createLookRecord,
+} from './looks-store.js';
 
 const { createApp, ref, computed, watch, nextTick } = Vue;
 
 const AUTH_KEY = 'dt-shopper-auth';
 const LAYOUT_KEY = 'dt-layout-mode';
 const LOOK_PLACEMENT_KEY = 'dt-look-placement';
+const LIBRARY_STEPS = new Set(['favorites', 'history']);
 
 /** Dev-only: reative para true para exibir os toggles no header. */
 const SHOW_LAYOUT_TOGGLES = false;
@@ -53,6 +66,7 @@ createApp({
     GenerateScreen,
     ResultScreen,
     WorkspaceScreen,
+    LooksLibraryScreen,
     LoadingOverlay,
   },
   setup() {
@@ -62,10 +76,12 @@ createApp({
     const lookPlacement = ref(SHOW_LAYOUT_TOGGLES ? readLookPlacement() : 'floating');
 
     const step = ref('catalog');
+    const previousStep = ref('catalog');
     const photo = ref(null);
     const selected = ref(emptySelection());
     const resultUrl = ref(null);
     const resultBlob = ref(null);
+    const currentLookId = ref(null);
     const generating = ref(false);
     const progressMsg = ref(PROGRESS_MESSAGES[0]);
     const copiedImage = ref(false);
@@ -74,6 +90,8 @@ createApp({
     const copiedRefId = ref(null);
     const copiedAllRefs = ref(false);
     const toast = ref(null);
+    const historyLooks = ref(loadHistory());
+    const favoriteLooks = ref(loadFavorites());
 
     let progressTimer = null;
     let feedbackTimers = [];
@@ -118,6 +136,8 @@ createApp({
       selected.value = emptySelection();
       resultUrl.value = null;
       resultBlob.value = null;
+      currentLookId.value = null;
+      lookFavorited.value = false;
       step.value = 'catalog';
       showToast('Sessão encerrada');
     }
@@ -130,8 +150,8 @@ createApp({
     }
 
     function canGoTo(target) {
-      if (target === 'catalog') return true;
-      if (target === 'workspace') return piecesReady();
+      if (target === 'catalog' || LIBRARY_STEPS.has(target)) return true;
+      if (target === 'workspace') return piecesReady() || Boolean(resultUrl.value);
       if (target === 'upload') return piecesReady();
       if (target === 'generate') return piecesReady() && Boolean(photo.value?.url);
       if (target === 'result') return Boolean(resultUrl.value);
@@ -151,7 +171,53 @@ createApp({
         showToast(hints[target] || 'Etapa ainda não disponível.');
         return;
       }
+      if (LIBRARY_STEPS.has(target) && !LIBRARY_STEPS.has(step.value)) {
+        previousStep.value = step.value;
+      }
       step.value = target;
+    }
+
+    function backFromLibrary() {
+      const fallback = previousStep.value && !LIBRARY_STEPS.has(previousStep.value)
+        ? previousStep.value
+        : (resultUrl.value || piecesReady()
+          ? (isWorkspace.value ? 'workspace' : (resultUrl.value ? 'result' : 'catalog'))
+          : 'catalog');
+      step.value = canGoTo(fallback) ? fallback : 'catalog';
+    }
+
+    async function dataUrlToBlob(dataUrl) {
+      const res = await fetch(dataUrl);
+      return res.blob();
+    }
+
+    async function openLook(look) {
+      if (!look?.resultUrl) return;
+
+      const nextSelected = emptySelection();
+      (look.pieces || []).forEach((piece) => {
+        if (piece?.category && nextSelected[piece.category] !== undefined) {
+          nextSelected[piece.category] = { ...piece };
+        }
+      });
+
+      selected.value = nextSelected;
+      resultUrl.value = look.resultUrl;
+      currentLookId.value = look.id;
+      lookFavorited.value = isFavorite(look.id);
+      copiedImage.value = false;
+      savedImage.value = false;
+      copiedRefId.value = null;
+      copiedAllRefs.value = false;
+
+      try {
+        resultBlob.value = await dataUrlToBlob(look.resultUrl);
+      } catch {
+        resultBlob.value = null;
+      }
+
+      step.value = isWorkspace.value ? 'workspace' : 'result';
+      showToast('Look aberto', 'success');
     }
 
     function continueFromCatalog() {
@@ -244,6 +310,12 @@ createApp({
         ]);
         resultUrl.value = composed.dataUrl;
         resultBlob.value = composed.blob;
+        const look = createLookRecord({
+          resultUrl: composed.dataUrl,
+          pieces: pieces.value,
+        });
+        currentLookId.value = look.id;
+        historyLooks.value = addToHistory(look);
         copiedImage.value = false;
         savedImage.value = false;
         lookFavorited.value = false;
@@ -381,11 +453,58 @@ createApp({
     }
 
     function onToggleFavorite() {
-      lookFavorited.value = !lookFavorited.value;
-      showToast(
-        lookFavorited.value ? 'Look favoritado' : 'Look removido dos favoritos',
-        'success',
-      );
+      if (!resultUrl.value) return;
+
+      if (!currentLookId.value) {
+        const look = createLookRecord({
+          resultUrl: resultUrl.value,
+          pieces: pieces.value,
+        });
+        currentLookId.value = look.id;
+        historyLooks.value = addToHistory(look);
+      }
+
+      const look = {
+        id: currentLookId.value,
+        createdAt: Date.now(),
+        resultUrl: resultUrl.value,
+        pieces: pieces.value.map((p) => ({ ...p })),
+      };
+
+      if (lookFavorited.value) {
+        favoriteLooks.value = removeFavorite(look.id);
+        lookFavorited.value = false;
+        showToast('Look removido dos favoritos', 'success');
+        return;
+      }
+
+      favoriteLooks.value = addFavorite(look);
+      lookFavorited.value = true;
+      showToast('Look favoritado', 'success');
+    }
+
+    function onToggleFavoriteFromLibrary(look) {
+      if (!look?.id) return;
+      if (isFavorite(look.id)) {
+        favoriteLooks.value = removeFavorite(look.id);
+        if (currentLookId.value === look.id) lookFavorited.value = false;
+        showToast('Look removido dos favoritos', 'success');
+        return;
+      }
+      favoriteLooks.value = addFavorite(look);
+      if (currentLookId.value === look.id) lookFavorited.value = true;
+      showToast('Look favoritado', 'success');
+    }
+
+    function onRemoveHistoryLook(look) {
+      if (!look?.id) return;
+      historyLooks.value = removeFromHistory(look.id);
+      showToast('Look removido do histórico');
+    }
+
+    function onClearHistory() {
+      historyLooks.value = clearHistoryStore();
+      showToast('Histórico limpo');
     }
 
     function restart() {
@@ -394,6 +513,7 @@ createApp({
       selected.value = emptySelection();
       resultUrl.value = null;
       resultBlob.value = null;
+      currentLookId.value = null;
       copiedImage.value = false;
       savedImage.value = false;
       lookFavorited.value = false;
@@ -423,9 +543,12 @@ createApp({
       toast,
       pieces,
       mainInert,
+      historyLooks,
+      favoriteLooks,
       onLogin,
       logout,
       navigate,
+      backFromLibrary,
       continueFromCatalog,
       toggleLayout,
       toggleLookPlacement,
@@ -439,6 +562,10 @@ createApp({
       onCopyRef,
       onCopyAllRefs,
       onToggleFavorite,
+      onToggleFavoriteFromLibrary,
+      onRemoveHistoryLook,
+      onClearHistory,
+      openLook,
       regenerate,
       restart,
     };
@@ -454,9 +581,12 @@ createApp({
           :layout-mode="layoutMode"
           :look-placement="lookPlacement"
           :show-layout-toggles="showLayoutToggles"
+          :favorites-count="favoriteLooks.length"
+          :history-count="historyLooks.length"
           @logout="logout"
           @toggle-layout="toggleLayout"
           @toggle-look-placement="toggleLookPlacement"
+          @navigate="navigate"
         />
 
         <main
@@ -465,8 +595,30 @@ createApp({
           :inert="mainInert || undefined"
           :aria-busy="generating ? 'true' : 'false'"
         >
+          <LooksLibraryScreen
+            v-if="step === 'favorites'"
+            mode="favorites"
+            :items="favoriteLooks"
+            :favorite-ids="favoriteLooks.map((l) => l.id)"
+            @back="backFromLibrary"
+            @open="openLook"
+            @toggle-favorite="onToggleFavoriteFromLibrary"
+          />
+
+          <LooksLibraryScreen
+            v-else-if="step === 'history'"
+            mode="history"
+            :items="historyLooks"
+            :favorite-ids="favoriteLooks.map((l) => l.id)"
+            @back="backFromLibrary"
+            @open="openLook"
+            @toggle-favorite="onToggleFavoriteFromLibrary"
+            @remove="onRemoveHistoryLook"
+            @clear="onClearHistory"
+          />
+
           <CatalogScreen
-            v-if="step === 'catalog'"
+            v-else-if="step === 'catalog'"
             :selected="selected"
             :has-photo="Boolean(photo?.url)"
             :layout-mode="layoutMode"
@@ -477,7 +629,7 @@ createApp({
           />
 
           <!-- Modo clássico: etapas separadas -->
-          <template v-if="layoutMode === 'classic'">
+          <template v-else-if="layoutMode === 'classic'">
             <PhotoUploadScreen
               v-if="step === 'upload'"
               :photo="photo"
