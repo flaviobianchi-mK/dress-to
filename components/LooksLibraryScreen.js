@@ -1,7 +1,7 @@
 import { categoryLabel, formatPrice } from '../js/catalog-data.js';
 import { formatLookDate, lookTotal } from '../js/looks-store.js';
 
-const { reactive, computed } = Vue;
+const { reactive, ref, computed } = Vue;
 
 export default {
   name: 'LooksLibraryScreen',
@@ -11,8 +11,9 @@ export default {
     favoriteIds: { type: Array, default: () => [] },
   },
   emits: ['back', 'open', 'toggle-favorite', 'remove', 'clear'],
-  setup(props) {
+  setup(props, { emit }) {
     const loadedImages = reactive({});
+    const confirmDialog = ref(null);
 
     const isFavorites = computed(() => props.mode === 'favorites');
     const favoriteIdSet = computed(() => new Set(props.favoriteIds));
@@ -55,12 +56,74 @@ export default {
         .join(' · ');
     }
 
+    function openConfirm(dialog) {
+      confirmDialog.value = dialog;
+    }
+
+    function closeConfirm() {
+      confirmDialog.value = null;
+    }
+
+    function requestUnfavorite(look) {
+      openConfirm({
+        type: 'unfavorite',
+        look,
+        title: 'Remover dos favoritos?',
+        message: 'Este look sai da lista de Favoritados. Você pode favoritar de novo depois.',
+        confirmLabel: 'Remover dos favoritos',
+      });
+    }
+
+    function requestRemove(look) {
+      openConfirm({
+        type: 'remove',
+        look,
+        title: 'Excluir do histórico?',
+        message: 'Esta ação remove o look do histórico neste dispositivo. Não dá para desfazer.',
+        confirmLabel: 'Excluir look',
+      });
+    }
+
+    function requestClear() {
+      openConfirm({
+        type: 'clear',
+        look: null,
+        title: 'Limpar histórico?',
+        message: `Todos os ${props.items.length} looks do histórico serão excluídos neste dispositivo. Favoritos permanecem.`,
+        confirmLabel: 'Limpar histórico',
+      });
+    }
+
+    function onFavoriteClick(look) {
+      if (isLookFavorited(look)) {
+        requestUnfavorite(look);
+        return;
+      }
+      emit('toggle-favorite', look);
+    }
+
+    function confirmAction() {
+      const dialog = confirmDialog.value;
+      if (!dialog) return;
+
+      if (dialog.type === 'unfavorite' && dialog.look) {
+        emit('toggle-favorite', dialog.look);
+      } else if (dialog.type === 'remove' && dialog.look) {
+        emit('remove', dialog.look);
+      } else if (dialog.type === 'clear') {
+        emit('clear');
+      }
+
+      closeConfirm();
+    }
+
     return {
       isFavorites,
       title,
       lead,
       emptyTitle,
       emptyLead,
+      confirmDialog,
       categoryLabel,
       formatPrice,
       formatLookDate,
@@ -69,6 +132,11 @@ export default {
       isLookFavorited,
       isImageLoaded,
       markImageLoaded,
+      onFavoriteClick,
+      requestRemove,
+      requestClear,
+      closeConfirm,
+      confirmAction,
     };
   },
   template: `
@@ -88,7 +156,7 @@ export default {
           v-if="!isFavorites && items.length"
           type="button"
           class="dt-btn dt-btn--ghost dt-btn--sm"
-          @click="$emit('clear')"
+          @click="requestClear"
         >
           <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">delete_sweep</span>
           Limpar histórico
@@ -159,7 +227,7 @@ export default {
                 :class="{ 'is-favorited': isLookFavorited(look) }"
                 :aria-pressed="isLookFavorited(look) ? 'true' : 'false'"
                 :aria-label="isLookFavorited(look) ? 'Remover dos favoritos' : 'Favoritar look'"
-                @click="$emit('toggle-favorite', look)"
+                @click="onFavoriteClick(look)"
               >
                 <span
                   class="material-symbols-outlined dt-icon dt-icon--sm"
@@ -174,7 +242,7 @@ export default {
                 type="button"
                 class="dt-btn dt-btn--ghost dt-btn--sm"
                 aria-label="Remover do histórico"
-                @click="$emit('remove', look)"
+                @click="requestRemove(look)"
               >
                 <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">delete</span>
               </button>
@@ -182,7 +250,33 @@ export default {
           </div>
         </li>
       </ul>
+
+      <Teleport to="body">
+        <div
+          v-if="confirmDialog"
+          class="dt-confirm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="dt-confirm-title"
+          @click.self="closeConfirm"
+        >
+          <div class="dt-confirm__panel">
+            <div class="dt-confirm__icon" aria-hidden="true">
+              <span class="material-symbols-outlined dt-icon">{{ confirmDialog.type === 'unfavorite' ? 'heart_minus' : 'delete' }}</span>
+            </div>
+            <h2 id="dt-confirm-title">{{ confirmDialog.title }}</h2>
+            <p>{{ confirmDialog.message }}</p>
+            <div class="dt-confirm__actions">
+              <button type="button" class="dt-btn dt-btn--ghost" @click="closeConfirm">
+                Cancelar
+              </button>
+              <button type="button" class="dt-btn dt-btn--danger" @click="confirmAction">
+                {{ confirmDialog.confirmLabel }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Teleport>
     </section>
   `,
 };
-
