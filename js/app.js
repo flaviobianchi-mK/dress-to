@@ -369,49 +369,6 @@ createApp({
       }
     }
 
-    async function onSendWhatsApp() {
-      try {
-        if (!resultBlob.value) throw new Error('Sem imagem');
-
-        const refs = pieces.value
-          .map((p) => (p.size ? `${p.ref} · Tam. ${p.size}` : p.ref))
-          .join('\n');
-        const message = [
-          'Olá! Segue o provador virtual Dress To 👗',
-          refs ? `\nReferências:\n${refs}` : '',
-          '\n(Anexe a imagem do provador que acabou de ser baixada.)',
-        ].join('');
-
-        // Baixa a imagem para anexar no WhatsApp
-        const url = URL.createObjectURL(resultBlob.value);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `provador-dress-to-${Date.now()}.png`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-
-        if (refs) {
-          try {
-            await copyText(refs);
-          } catch {
-            /* texto ainda vai no wa.me */
-          }
-        }
-
-        window.open(
-          `https://wa.me/?text=${encodeURIComponent(message)}`,
-          '_blank',
-          'noopener,noreferrer',
-        );
-        showToast('WhatsApp aberto — anexe a imagem baixada', 'success');
-      } catch (err) {
-        console.error(err);
-        showToast('Não foi possível preparar o envio no WhatsApp.');
-      }
-    }
-
     async function onCopyRef(piece) {
       try {
         const text = piece.size ? `${piece.ref} · Tam. ${piece.size}` : piece.ref;
@@ -558,7 +515,6 @@ createApp({
       runGeneration,
       onCopyImage,
       onSaveImage,
-      onSendWhatsApp,
       onCopyRef,
       onCopyAllRefs,
       onToggleFavorite,
@@ -682,7 +638,6 @@ createApp({
             @generate="runGeneration"
             @edit-catalog="step = 'catalog'"
             @save-image="onSaveImage"
-            @send-whatsapp="onSendWhatsApp"
             @copy-ref="onCopyRef"
             @copy-all-refs="onCopyAllRefs"
             @toggle-favorite="onToggleFavorite"

@@ -16,6 +16,34 @@ const { ref, reactive, computed, watch, nextTick, onMounted, onBeforeUnmount } =
 
 const DRAWER_WIDTH = 136;
 const DRAWER_GAP = 10;
+const BROWSE_MODE_KEY = 'dt-catalog-browse-mode';
+
+function readBrowseMode() {
+  try {
+    const saved = sessionStorage.getItem(BROWSE_MODE_KEY);
+    return saved === 'search' ? 'search' : 'catalog';
+  } catch {
+    return 'catalog';
+  }
+}
+
+function parseSearchTokens(raw) {
+  const text = String(raw || '').trim();
+  if (!text) return [];
+
+  const parts = text
+    .split(/[,;\n|]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length > 1) return parts;
+
+  const single = parts[0] || text;
+  if (/[.\-_\/]/.test(single) && /\s+/.test(single)) {
+    return single.split(/\s+/).map((part) => part.trim()).filter(Boolean);
+  }
+  return [single];
+}
 
 export default {
   name: 'CatalogScreen',
@@ -32,9 +60,11 @@ export default {
     const activeVestidos = ref([]);
     const drawerSides = ref({});
     const viewMode = ref('grid');
+    const browseMode = ref(readBrowseMode());
     const expandedSections = ref({});
     const catalogLoading = ref(true);
     const loadedImages = reactive({});
+    const searchInputRef = ref(null);
 
     const GRID_PAGE_SIZE = 6;
     const LIST_PAGE_SIZE = 8;
@@ -44,6 +74,8 @@ export default {
       { id: 'baixo', cards: 6 },
       { id: 'acessorio', cards: 6 },
     ];
+
+    const isSearchMode = computed(() => browseMode.value === 'search');
 
     function markImageLoaded(src) {
       if (src) loadedImages[src] = true;
@@ -104,6 +136,9 @@ export default {
         activeVestidos.value.length > 0,
     );
 
+    const searchTokens = computed(() => parseSearchTokens(query.value));
+    const isMultiSkuQuery = computed(() => searchTokens.value.length > 1);
+
     function toggleInList(listRef, value) {
       const list = listRef.value;
       const idx = list.indexOf(value);
@@ -132,18 +167,57 @@ export default {
       return labels.some((label) => matchesKeywords(item, label));
     }
 
+    function matchesToken(item, token) {
+      const t = token.toLowerCase();
+      const ref = String(item.ref || '').toLowerCase();
+      const name = String(item.name || '').toLowerCase();
+      const id = String(item.id || '').toLowerCase();
+      return ref === t || ref.includes(t) || name.includes(t) || id === t;
+    }
+
     const filtered = computed(() => {
-      const q = query.value.trim().toLowerCase();
       const types = activeTypes.value.filter((t) => t !== 'Ver Tudo');
+      const tokens = searchTokens.value;
+      const hasFilterOnly =
+        isSearchMode.value &&
+        !tokens.length &&
+        (types.length > 0 || activeVestidos.value.length > 0);
+
       return CATALOG.filter((item) => {
         if (!matchesAny(item, types)) return false;
         if (!matchesAny(item, activeVestidos.value)) return false;
-        if (q) {
-          const hay = `${item.name} ${item.ref}`.toLowerCase();
-          if (!hay.includes(q)) return false;
+        if (!tokens.length) {
+          if (isSearchMode.value) return hasFilterOnly;
+          return true;
         }
-        return true;
+        if (tokens.length === 1) return matchesToken(item, tokens[0]);
+        return tokens.some((token) => matchesToken(item, token));
       });
+    });
+
+    const multiSkuMatches = computed(() => {
+      if (!isMultiSkuQuery.value) return [];
+      const seen = new Set();
+      const matches = [];
+      searchTokens.value.forEach((token) => {
+        const hit = CATALOG.find((item) => {
+          if (seen.has(item.id)) return false;
+          return matchesToken(item, token);
+        });
+        if (hit && matchesAny(hit, activeTypes.value.filter((t) => t !== 'Ver Tudo'))
+          && matchesAny(hit, activeVestidos.value)) {
+          seen.add(hit.id);
+          matches.push({ token, item: hit });
+        }
+      });
+      return matches;
+    });
+
+    const addableSearchResults = computed(() => {
+      if (isMultiSkuQuery.value) {
+        return multiSkuMatches.value.map((entry) => entry.item);
+      }
+      return filtered.value;
     });
 
     const grouped = computed(() =>
@@ -157,6 +231,10 @@ export default {
 
     const pageSize = computed(() =>
       viewMode.value === 'list' ? LIST_PAGE_SIZE : GRID_PAGE_SIZE,
+    );
+
+    const searchHasIntent = computed(
+      () => Boolean(query.value.trim()) || activeFilterCount.value > 0,
     );
 
     function isSelected(item) {
@@ -190,6 +268,22 @@ export default {
     function isBlocked(item) {
       const current = props.selected[item.category];
       return Boolean(current && current.id !== item.id);
+    }
+
+    function setBrowseMode(mode) {
+      if (mode !== 'catalog' && mode !== 'search') return;
+      browseMode.value = mode;
+      filtersOpen.value = false;
+      try {
+        sessionStorage.setItem(BROWSE_MODE_KEY, mode);
+      } catch {
+        /* ignore */
+      }
+      if (mode === 'search') {
+        nextTick(() => searchInputRef.value?.focus?.());
+      } else {
+        nextTick(updateDrawerSides);
+      }
     }
 
     function toggleFilters() {
@@ -269,6 +363,7 @@ export default {
     }
 
     function maybeAdvanceSection(category) {
+      if (isSearchMode.value) return;
       const idx = SECTION_ORDER.indexOf(category);
       if (idx < 0 || idx >= SECTION_ORDER.length - 1) return;
       const nextId = SECTION_ORDER[idx + 1];
@@ -281,6 +376,7 @@ export default {
     }
 
     function updateDrawerSides() {
+      if (isSearchMode.value) return;
       nextTick(() => {
         const next = { ...drawerSides.value };
         document.querySelectorAll('.dt-card-wrap[data-item-id]').forEach((el) => {
@@ -302,6 +398,34 @@ export default {
       });
     }
 
+    function addPiece(item) {
+      if (!item) return;
+      if (!isSelected(item)) emit('toggle', item);
+    }
+
+    function addAllMatches() {
+      const byCategory = {};
+      addableSearchResults.value.forEach((item) => {
+        byCategory[item.category] = item;
+      });
+      Object.values(byCategory).forEach((item) => addPiece(item));
+    }
+
+    function onSearchEnter(event) {
+      if (!isSearchMode.value) return;
+      event.preventDefault();
+      if (isMultiSkuQuery.value && multiSkuMatches.value.length) {
+        addAllMatches();
+        return;
+      }
+      if (filtered.value[0]) addPiece(filtered.value[0]);
+    }
+
+    function clearQuery() {
+      query.value = '';
+      nextTick(() => searchInputRef.value?.focus?.());
+    }
+
     watch(
       () => props.selected,
       () => updateDrawerSides(),
@@ -312,11 +436,11 @@ export default {
       updateDrawerSides();
       window.addEventListener('resize', updateDrawerSides);
       window.addEventListener('scroll', updateDrawerSides, true);
-      // Simula fetch do catálogo — trocar por await da API quando existir
       await new Promise((r) => setTimeout(r, 550));
       catalogLoading.value = false;
       await nextTick();
       updateDrawerSides();
+      if (isSearchMode.value) searchInputRef.value?.focus?.();
     });
 
     onBeforeUnmount(() => {
@@ -342,9 +466,18 @@ export default {
       continueHint,
       lookTotal,
       grouped,
+      filtered,
       viewMode,
+      browseMode,
+      isSearchMode,
       catalogLoading,
       SKELETON_SECTIONS,
+      searchInputRef,
+      searchTokens,
+      isMultiSkuQuery,
+      multiSkuMatches,
+      addableSearchResults,
+      searchHasIntent,
       categoryLabel,
       colorLabel,
       formatPrice,
@@ -366,18 +499,61 @@ export default {
       removeChip,
       clearFilters,
       setViewMode,
+      setBrowseMode,
       onSetSize,
+      addPiece,
+      addAllMatches,
+      onSearchEnter,
+      clearQuery,
     };
   },
   template: `
-    <section class="dt-screen dt-screen--catalog" aria-labelledby="catalog-title">
-      <h1 class="dt-screen__title" id="catalog-title">Montar o look</h1>
-      <p class="dt-screen__lead">
-        Escolha as peças do catálogo Dress To. Uma peça por categoria
-        (cima, baixo, acessório).
-      </p>
+    <section
+      class="dt-screen dt-screen--catalog"
+      :class="{ 'dt-screen--catalog-search': isSearchMode }"
+      aria-labelledby="catalog-title"
+    >
+      <div class="dt-catalog-top">
+        <div class="dt-catalog-top__copy">
+          <h1 class="dt-screen__title" id="catalog-title">Montar o look</h1>
+          <p class="dt-screen__lead">
+            <template v-if="isSearchMode">
+              Busque por nome ou referência, adicione ao look e continue pesquisando.
+              Dá para colar várias SKUs de uma vez (separadas por vírgula).
+            </template>
+            <template v-else>
+              Escolha as peças do catálogo Dress To. Uma peça por categoria
+              (cima, baixo, acessório).
+            </template>
+          </p>
+        </div>
 
-      <div class="dt-catalog">
+        <div class="dt-browse-toggle" role="group" aria-label="Modo de montagem do look">
+          <button
+            type="button"
+            class="dt-browse-toggle__btn"
+            :class="{ 'is-active': browseMode === 'catalog' }"
+            :aria-pressed="browseMode === 'catalog'"
+            @click="setBrowseMode('catalog')"
+          >
+            <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">grid_view</span>
+            Catálogo
+          </button>
+          <button
+            type="button"
+            class="dt-browse-toggle__btn"
+            :class="{ 'is-active': browseMode === 'search' }"
+            :aria-pressed="browseMode === 'search'"
+            @click="setBrowseMode('search')"
+          >
+            <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">search</span>
+            Pesquisa
+          </button>
+        </div>
+      </div>
+
+      <!-- ——— Modo catálogo (atual) ——— -->
+      <div v-if="!isSearchMode" class="dt-catalog">
         <div>
           <div
             v-if="catalogLoading"
@@ -591,7 +767,299 @@ export default {
         </aside>
       </div>
 
-      <Teleport to="body">
+      <!-- ——— Modo pesquisa ——— -->
+      <div v-else class="dt-catalog-search">
+        <aside class="dt-lookbar dt-lookbar--stage dt-glass-2" aria-label="Look selecionado">
+          <div class="dt-lookbar__head">
+            <div class="dt-lookbar__title">Look montado</div>
+            <span class="dt-lookbar__count">{{ selectedList.length }}/3</span>
+          </div>
+
+          <ul class="dt-lookbar__list dt-lookbar__list--row">
+            <li v-if="!selectedList.length" class="dt-lookbar__empty">
+              Pesquise e adicione peças ao look. Uma por categoria.
+            </li>
+            <li
+              v-for="piece in selectedList"
+              :key="piece.id"
+              class="dt-look-item"
+              :class="{ 'needs-size': pieceNeedsSize(piece) && !piece.size }"
+            >
+              <div
+                class="dt-media-skel dt-look-item__thumb"
+                :class="{ 'is-loaded': isImageLoaded(piece.image) }"
+              >
+                <img
+                  :src="piece.image"
+                  :alt="piece.name"
+                  :ref="(el) => bindImageEl(el, piece.image)"
+                  @load="markImageLoaded(piece.image)"
+                  @error="markImageLoaded(piece.image)"
+                />
+              </div>
+              <div class="dt-look-item__body">
+                <span class="dt-look-item__cat">{{ categoryLabel(piece.category) }}</span>
+                <div class="dt-look-item__name">{{ piece.name }}</div>
+                <div
+                  v-if="pieceNeedsSize(piece)"
+                  class="dt-look-item__sizes"
+                  role="group"
+                  :aria-label="'Tamanho de ' + piece.name"
+                >
+                  <button
+                    v-for="size in SIZE_FILTERS"
+                    :key="piece.id + '-' + size"
+                    type="button"
+                    class="dt-filter-size dt-filter-size--sm"
+                    :class="{ 'is-active': piece.size === size }"
+                    :aria-pressed="piece.size === size"
+                    @click="onSetSize({ category: piece.category, size })"
+                  >{{ size }}</button>
+                </div>
+                <div class="dt-card__price">{{ formatPrice(piece.price) }}</div>
+              </div>
+              <button
+                type="button"
+                class="dt-look-item__remove"
+                :aria-label="'Remover ' + piece.name"
+                @click="$emit('remove', piece.category)"
+              >
+                <span class="material-symbols-outlined dt-icon" aria-hidden="true">close</span>
+              </button>
+            </li>
+          </ul>
+
+          <div v-if="selectedList.length" class="dt-lookbar__total">
+            Total · {{ formatPrice(lookTotal) }}
+          </div>
+        </aside>
+
+        <div class="dt-catalog-search__stage">
+          <div
+            class="dt-catalog__dock dt-catalog__dock--stage"
+            role="search"
+            aria-label="Busca, filtros e continuar"
+          >
+            <div
+              v-if="filtersOpen"
+              id="dt-filter-panel-search"
+              class="dt-filter-panel dt-filter-panel--dock"
+              role="region"
+              aria-label="Filtros do catálogo Dress To"
+            >
+              <div class="dt-filter-mega">
+                <div
+                  v-for="col in FILTER_MENU"
+                  :key="'search-' + col.id"
+                  class="dt-filter-mega__col"
+                >
+                  <h3 class="dt-filter-mega__heading">{{ col.label }}</h3>
+                  <ul class="dt-filter-mega__list">
+                    <li v-for="item in col.items" :key="'search-' + item">
+                      <button
+                        type="button"
+                        class="dt-filter-mega__link"
+                        :class="{ 'is-active': isTypeActive(item) }"
+                        :aria-pressed="isTypeActive(item)"
+                        @click="selectType(item)"
+                      >{{ item }}</button>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div v-if="showVestidoPanel" class="dt-filter-sub">
+                <div class="dt-filter-mega__col">
+                  <h3 class="dt-filter-mega__heading">Vestidos</h3>
+                  <ul class="dt-filter-mega__list">
+                    <li v-for="item in VESTIDO_FILTERS" :key="'search-v-' + item">
+                      <button
+                        type="button"
+                        class="dt-filter-mega__link"
+                        :class="{ 'is-active': isVestidoActive(item) }"
+                        :aria-pressed="isVestidoActive(item)"
+                        @click="selectVestido(item)"
+                      >{{ item }}</button>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="dt-filter-panel__footer">
+                <button
+                  type="button"
+                  class="dt-btn dt-btn--ghost dt-btn--sm"
+                  :disabled="!activeFilterCount"
+                  @click="clearFilters"
+                >
+                  Limpar filtros
+                </button>
+                <button
+                  type="button"
+                  class="dt-btn dt-btn--primary dt-btn--sm"
+                  @click="filtersOpen = false"
+                >
+                  Ver resultados
+                </button>
+              </div>
+            </div>
+
+            <div v-if="activeFilterCount" class="dt-filter-chips dt-filter-chips--dock">
+              <button
+                v-for="chip in activeFilterChips"
+                :key="'search-chip-' + chip.group + '-' + chip.label"
+                type="button"
+                class="dt-chip is-active"
+                @click="removeChip(chip)"
+              >{{ chip.label }} ×</button>
+            </div>
+
+            <div class="dt-catalog__dock-bar">
+              <div class="dt-toolbar dt-toolbar--dock">
+                <div class="dt-search">
+                  <span class="dt-search__icon" aria-hidden="true">
+                    <span class="material-symbols-outlined dt-icon">search</span>
+                  </span>
+                  <input
+                    ref="searchInputRef"
+                    v-model="query"
+                    type="search"
+                    placeholder="SKU, nome ou várias refs (ex: 02.08.3668_0038, 03.07.0384_0087)"
+                    aria-label="Buscar peças por nome ou SKU"
+                    @keydown.enter="onSearchEnter"
+                  />
+                  <button
+                    v-if="query"
+                    type="button"
+                    class="dt-search__clear"
+                    aria-label="Limpar busca"
+                    @click="clearQuery"
+                  >
+                    <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">close</span>
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  class="dt-btn dt-btn--ghost dt-filter-trigger"
+                  :class="{ 'is-open': filtersOpen }"
+                  :aria-expanded="filtersOpen"
+                  aria-controls="dt-filter-panel-search"
+                  @click="toggleFilters"
+                >
+                  <span class="material-symbols-outlined dt-icon" aria-hidden="true">tune</span>
+                  Filtros
+                  <span v-if="activeFilterCount" class="dt-filter-trigger__count">{{ activeFilterCount }}</span>
+                </button>
+              </div>
+
+              <div class="dt-catalog__dock-cta">
+                <button
+                  type="button"
+                  class="dt-btn dt-btn--primary dt-catalog__dock-continue"
+                  :class="{ 'is-needs-size': needsSize }"
+                  :disabled="!canContinue"
+                  :title="continueHint || continueLabel"
+                  @click="$emit('continue')"
+                >
+                  <span>{{ continueLabel }}</span>
+                  <span
+                    v-if="!needsSize"
+                    class="material-symbols-outlined dt-icon"
+                    aria-hidden="true"
+                  >arrow_forward</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="!searchHasIntent" class="dt-catalog-search__hint">
+            Digite uma referência ou cole várias SKUs separadas por vírgula.
+          </div>
+
+          <div v-else class="dt-catalog-search__results dt-glass-2">
+            <div class="dt-catalog-search__results-head">
+              <div>
+                <strong v-if="isMultiSkuQuery">
+                  {{ multiSkuMatches.length }} de {{ searchTokens.length }} SKUs encontradas
+                </strong>
+                <strong v-else>
+                  {{ filtered.length }} resultado{{ filtered.length === 1 ? '' : 's' }}
+                </strong>
+              </div>
+              <button
+                v-if="addableSearchResults.length"
+                type="button"
+                class="dt-btn dt-btn--ghost dt-btn--sm"
+                @click="addAllMatches"
+              >
+                <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">playlist_add</span>
+                {{ isMultiSkuQuery ? 'Adicionar SKUs ao look' : 'Adicionar ao look' }}
+              </button>
+            </div>
+
+            <ul v-if="addableSearchResults.length" class="dt-catalog-search__list" role="list">
+              <li
+                v-for="item in addableSearchResults"
+                :key="item.id"
+                class="dt-catalog-search__row"
+                :class="{ 'is-selected': isSelected(item) }"
+              >
+                <div
+                  class="dt-media-skel dt-catalog-search__thumb"
+                  :class="{ 'is-loaded': isImageLoaded(item.image) }"
+                >
+                  <img
+                    :src="item.image"
+                    :alt="item.name"
+                    :ref="(el) => bindImageEl(el, item.image)"
+                    @load="markImageLoaded(item.image)"
+                    @error="markImageLoaded(item.image)"
+                  />
+                </div>
+
+                <div class="dt-catalog-search__meta">
+                  <div class="dt-card__ref">{{ item.ref }}</div>
+                  <div class="dt-catalog-search__name">{{ item.name }}</div>
+                  <div class="dt-card__meta">
+                    {{ categoryLabel(item.category) }} · {{ colorLabel(item.color) }} · {{ formatPrice(item.price) }}
+                  </div>
+
+                  <div
+                    v-if="isSelected(item) && pieceNeedsSize(item)"
+                    class="dt-catalog-search__sizes"
+                    role="group"
+                    :aria-label="'Tamanho de ' + item.name"
+                  >
+                    <button
+                      v-for="size in SIZE_FILTERS"
+                      :key="item.id + '-size-' + size"
+                      type="button"
+                      class="dt-filter-size dt-filter-size--sm"
+                      :class="{ 'is-active': selected[item.category]?.size === size }"
+                      :aria-pressed="selected[item.category]?.size === size"
+                      @click="onSetSize({ category: item.category, size })"
+                    >{{ size }}</button>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  class="dt-btn dt-btn--sm"
+                  :class="isSelected(item) ? 'dt-btn--ghost is-favorited' : 'dt-btn--primary'"
+                  @click="isSelected(item) ? $emit('remove', item.category) : addPiece(item)"
+                >
+                  {{ isSelected(item) ? 'No look' : 'Adicionar' }}
+                </button>
+              </li>
+            </ul>
+
+            <p v-else class="dt-empty">Nenhuma peça encontrada para essa busca.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dock inferior só no modo catálogo -->
+      <Teleport v-if="!isSearchMode" to="body">
         <div
           class="dt-catalog__dock"
           role="search"
@@ -664,7 +1132,7 @@ export default {
           <div v-if="activeFilterCount" class="dt-filter-chips dt-filter-chips--dock">
             <button
               v-for="chip in activeFilterChips"
-              :key="'dock-' + chip.group + '-' + (chip.value || chip.label)"
+              :key="'dock-' + chip.group + '-' + chip.label"
               type="button"
               class="dt-chip is-active"
               @click="removeChip(chip)"
