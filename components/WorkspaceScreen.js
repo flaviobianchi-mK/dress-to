@@ -32,7 +32,6 @@ export default {
     'generate',
     'edit-catalog',
     'save-image',
-    'send-whatsapp',
     'copy-ref',
     'copy-all-refs',
     'toggle-favorite',
@@ -93,8 +92,8 @@ export default {
       if (missingSizes.value) {
         return `${missingSizes.value} peça${missingSizes.value > 1 ? 's' : ''} sem tamanho — edite no catálogo.`;
       }
-      if (!hasResult.value) return 'Tudo certo. Gere o provador e envie pelo WhatsApp.';
-      return 'Salve a imagem ou envie pelo WhatsApp com as referências.';
+      if (!hasResult.value) return 'Tudo certo. Gere o provador virtual.';
+      return 'Salve a imagem e copie as referências para colar no Omnichat.';
     });
 
     const generateLabel = computed(() =>
@@ -253,7 +252,7 @@ export default {
           </h1>
           <p class="dt-workspace-intro__lead">
             {{ hasResult
-              ? 'Compare o resultado e envie a imagem com as referências no WhatsApp.'
+              ? 'Compare o resultado, salve a imagem e copie as referências.'
               : 'Envie a foto da cliente, recorte o enquadramento e gere o look.' }}
           </p>
         </div>
@@ -541,16 +540,6 @@ export default {
                   >
                     <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">add</span>
                     Novo
-                  </button>
-
-                  <button
-                    v-if="hasResult"
-                    type="button"
-                    class="dt-btn dt-btn--sm dt-btn--whatsapp"
-                    @click="$emit('send-whatsapp')"
-                  >
-                    <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">chat</span>
-                    WhatsApp
                   </button>
 
                   <button
