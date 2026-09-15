@@ -65,6 +65,7 @@ export default {
     const catalogLoading = ref(true);
     const loadedImages = reactive({});
     const searchInputRef = ref(null);
+    const pendingSkuIds = ref([]);
 
     const GRID_PAGE_SIZE = 6;
     const LIST_PAGE_SIZE = 8;
@@ -220,6 +221,68 @@ export default {
       return filtered.value;
     });
 
+    function isSelected(item) {
+      return props.selected[item.category]?.id === item.id;
+    }
+
+    const allAddableInLook = computed(() => {
+      const items = addableSearchResults.value;
+      return items.length > 0 && items.every((item) => isSelected(item));
+    });
+
+    const searchResultsInLook = computed(() =>
+      addableSearchResults.value.filter((item) => isSelected(item)),
+    );
+
+    const pendingAddableItems = computed(() =>
+      addableSearchResults.value.filter(
+        (item) => pendingSkuIds.value.includes(item.id) && !isSelected(item),
+      ),
+    );
+
+    const pendingAddableCount = computed(() => pendingAddableItems.value.length);
+
+    function isPendingSku(item) {
+      return pendingSkuIds.value.includes(item.id);
+    }
+
+    function setPendingSku(item, checked) {
+      if (!item || isSelected(item)) return;
+      if (!checked) {
+        pendingSkuIds.value = pendingSkuIds.value.filter((id) => id !== item.id);
+        return;
+      }
+      const sameCategoryIds = new Set(
+        addableSearchResults.value
+          .filter((other) => other.category === item.category && other.id !== item.id)
+          .map((other) => other.id),
+      );
+      pendingSkuIds.value = [
+        ...pendingSkuIds.value.filter((id) => !sameCategoryIds.has(id) && id !== item.id),
+        item.id,
+      ];
+    }
+
+    function togglePendingSku(item) {
+      setPendingSku(item, !isPendingSku(item));
+    }
+
+    watch(
+      () => multiSkuMatches.value.map((entry) => entry.item.id).join('\0'),
+      (key, prevKey) => {
+        if (!isMultiSkuQuery.value) {
+          pendingSkuIds.value = [];
+          return;
+        }
+        const ids = key ? key.split('\0') : [];
+        if (prevKey === key) return;
+        const idSet = new Set(ids);
+        const kept = pendingSkuIds.value.filter((id) => idSet.has(id));
+        pendingSkuIds.value = kept.length ? kept : [...ids];
+      },
+      { immediate: true },
+    );
+
     const grouped = computed(() =>
       CATEGORIES
         .map((cat) => ({
@@ -236,10 +299,6 @@ export default {
     const searchHasIntent = computed(
       () => Boolean(query.value.trim()) || activeFilterCount.value > 0,
     );
-
-    function isSelected(item) {
-      return props.selected[item.category]?.id === item.id;
-    }
 
     function isSectionExpanded(groupId) {
       return Boolean(expandedSections.value[groupId]);
@@ -292,7 +351,7 @@ export default {
 
     function onFilterOutsidePointerDown(event) {
       if (!filtersOpen.value) return;
-      if (event.target.closest?.('.dt-catalog__dock')) return;
+      if (event.target.closest?.('.dt-catalog__dock, .dt-lookbar__search')) return;
       filtersOpen.value = false;
     }
 
@@ -411,11 +470,23 @@ export default {
       Object.values(byCategory).forEach((item) => addPiece(item));
     }
 
+    function addSelectedMatches() {
+      if (!isMultiSkuQuery.value) {
+        addAllMatches();
+        return;
+      }
+      const byCategory = {};
+      pendingAddableItems.value.forEach((item) => {
+        byCategory[item.category] = item;
+      });
+      Object.values(byCategory).forEach((item) => addPiece(item));
+    }
+
     function onSearchEnter(event) {
       if (!isSearchMode.value) return;
       event.preventDefault();
-      if (isMultiSkuQuery.value && multiSkuMatches.value.length) {
-        addAllMatches();
+      if (isMultiSkuQuery.value && pendingAddableCount.value) {
+        addSelectedMatches();
         return;
       }
       if (filtered.value[0]) addPiece(filtered.value[0]);
@@ -477,6 +548,12 @@ export default {
       isMultiSkuQuery,
       multiSkuMatches,
       addableSearchResults,
+      allAddableInLook,
+      searchResultsInLook,
+      pendingAddableCount,
+      isPendingSku,
+      togglePendingSku,
+      setPendingSku,
       searchHasIntent,
       categoryLabel,
       colorLabel,
@@ -503,6 +580,7 @@ export default {
       onSetSize,
       addPiece,
       addAllMatches,
+      addSelectedMatches,
       onSearchEnter,
       clearQuery,
     };
@@ -513,18 +591,15 @@ export default {
       :class="{ 'dt-screen--catalog-search': isSearchMode }"
       aria-labelledby="catalog-title"
     >
-      <div class="dt-catalog-top">
-        <div class="dt-catalog-top__copy">
+      <div
+        class="dt-catalog-top"
+        :class="{ 'dt-catalog-top--search': isSearchMode }"
+      >
+        <div v-if="!isSearchMode" class="dt-catalog-top__copy">
           <h1 class="dt-screen__title" id="catalog-title">Montar o look</h1>
           <p class="dt-screen__lead">
-            <template v-if="isSearchMode">
-              Busque por nome ou referência, adicione ao look e continue pesquisando.
-              Dá para colar várias SKUs de uma vez (separadas por vírgula).
-            </template>
-            <template v-else>
-              Escolha as peças do catálogo Dress To. Uma peça por categoria
-              (cima, baixo, acessório).
-            </template>
+            Escolha as peças do catálogo Dress To. Uma peça por categoria
+            (cima, baixo, acessório).
           </p>
         </div>
 
@@ -768,293 +843,400 @@ export default {
       </div>
 
       <!-- ——— Modo pesquisa ——— -->
-      <div v-else class="dt-catalog-search">
-        <aside class="dt-lookbar dt-lookbar--stage dt-glass-2" aria-label="Look selecionado">
-          <div class="dt-lookbar__head">
-            <div class="dt-lookbar__title">Look montado</div>
-            <span class="dt-lookbar__count">{{ selectedList.length }}/3</span>
-          </div>
+      <div
+        v-else
+        class="dt-catalog-search"
+        :class="{ 'has-results': searchHasIntent }"
+      >
+        <div class="dt-catalog-search__cluster">
+          <header class="dt-catalog-search__copy">
+            <h1 class="dt-screen__title" id="catalog-title">Montar o look</h1>
+            <p class="dt-screen__lead">
+              Busque por nome ou referência, adicione ao look e continue pesquisando.
+              Dá para colar várias SKUs de uma vez (separadas por vírgula).
+            </p>
+          </header>
 
-          <ul class="dt-lookbar__list dt-lookbar__list--row">
-            <li v-if="!selectedList.length" class="dt-lookbar__empty">
-              Pesquise e adicione peças ao look. Uma por categoria.
-            </li>
-            <li
-              v-for="piece in selectedList"
-              :key="piece.id"
-              class="dt-look-item"
-              :class="{ 'needs-size': pieceNeedsSize(piece) && !piece.size }"
-            >
-              <div
-                class="dt-media-skel dt-look-item__thumb"
-                :class="{ 'is-loaded': isImageLoaded(piece.image) }"
-              >
-                <img
-                  :src="piece.image"
-                  :alt="piece.name"
-                  :ref="(el) => bindImageEl(el, piece.image)"
-                  @load="markImageLoaded(piece.image)"
-                  @error="markImageLoaded(piece.image)"
-                />
-              </div>
-              <div class="dt-look-item__body">
-                <span class="dt-look-item__cat">{{ categoryLabel(piece.category) }}</span>
-                <div class="dt-look-item__name">{{ piece.name }}</div>
-                <div
-                  v-if="pieceNeedsSize(piece)"
-                  class="dt-look-item__sizes"
-                  role="group"
-                  :aria-label="'Tamanho de ' + piece.name"
-                >
-                  <button
-                    v-for="size in SIZE_FILTERS"
-                    :key="piece.id + '-' + size"
-                    type="button"
-                    class="dt-filter-size dt-filter-size--sm"
-                    :class="{ 'is-active': piece.size === size }"
-                    :aria-pressed="piece.size === size"
-                    @click="onSetSize({ category: piece.category, size })"
-                  >{{ size }}</button>
-                </div>
-                <div class="dt-card__price">{{ formatPrice(piece.price) }}</div>
-              </div>
-              <button
-                type="button"
-                class="dt-look-item__remove"
-                :aria-label="'Remover ' + piece.name"
-                @click="$emit('remove', piece.category)"
-              >
-                <span class="material-symbols-outlined dt-icon" aria-hidden="true">close</span>
-              </button>
-            </li>
-          </ul>
-
-          <div v-if="selectedList.length" class="dt-lookbar__total">
-            Total · {{ formatPrice(lookTotal) }}
-          </div>
-        </aside>
-
-        <div class="dt-catalog-search__stage">
-          <div
-            class="dt-catalog__dock dt-catalog__dock--stage"
-            role="search"
-            aria-label="Busca, filtros e continuar"
+          <aside
+            class="dt-lookbar dt-lookbar--stage dt-glass-2"
+            :class="{ 'has-pieces': selectedList.length }"
+            aria-label="Look selecionado"
           >
-            <div
-              v-if="filtersOpen"
-              id="dt-filter-panel-search"
-              class="dt-filter-panel dt-filter-panel--dock"
-              role="region"
-              aria-label="Filtros do catálogo Dress To"
-            >
-              <div class="dt-filter-mega">
-                <div
-                  v-for="col in FILTER_MENU"
-                  :key="'search-' + col.id"
-                  class="dt-filter-mega__col"
-                >
-                  <h3 class="dt-filter-mega__heading">{{ col.label }}</h3>
-                  <ul class="dt-filter-mega__list">
-                    <li v-for="item in col.items" :key="'search-' + item">
-                      <button
-                        type="button"
-                        class="dt-filter-mega__link"
-                        :class="{ 'is-active': isTypeActive(item) }"
-                        :aria-pressed="isTypeActive(item)"
-                        @click="selectType(item)"
-                      >{{ item }}</button>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div v-if="showVestidoPanel" class="dt-filter-sub">
-                <div class="dt-filter-mega__col">
-                  <h3 class="dt-filter-mega__heading">Vestidos</h3>
-                  <ul class="dt-filter-mega__list">
-                    <li v-for="item in VESTIDO_FILTERS" :key="'search-v-' + item">
-                      <button
-                        type="button"
-                        class="dt-filter-mega__link"
-                        :class="{ 'is-active': isVestidoActive(item) }"
-                        :aria-pressed="isVestidoActive(item)"
-                        @click="selectVestido(item)"
-                      >{{ item }}</button>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div class="dt-filter-panel__footer">
-                <button
-                  type="button"
-                  class="dt-btn dt-btn--ghost dt-btn--sm"
-                  :disabled="!activeFilterCount"
-                  @click="clearFilters"
-                >
-                  Limpar filtros
-                </button>
-                <button
-                  type="button"
-                  class="dt-btn dt-btn--primary dt-btn--sm"
-                  @click="filtersOpen = false"
-                >
-                  Ver resultados
-                </button>
-              </div>
+            <div class="dt-lookbar__head">
+              <div class="dt-lookbar__title">Look montado</div>
+              <span class="dt-lookbar__count">{{ selectedList.length }}/3</span>
             </div>
 
-            <div v-if="activeFilterCount" class="dt-filter-chips dt-filter-chips--dock">
-              <button
-                v-for="chip in activeFilterChips"
-                :key="'search-chip-' + chip.group + '-' + chip.label"
-                type="button"
-                class="dt-chip is-active"
-                @click="removeChip(chip)"
-              >{{ chip.label }} ×</button>
-            </div>
-
-            <div class="dt-catalog__dock-bar">
-              <div class="dt-toolbar dt-toolbar--dock">
-                <div class="dt-search">
-                  <span class="dt-search__icon" aria-hidden="true">
-                    <span class="material-symbols-outlined dt-icon">search</span>
-                  </span>
-                  <input
-                    ref="searchInputRef"
-                    v-model="query"
-                    type="search"
-                    placeholder="SKU, nome ou várias refs (ex: 02.08.3668_0038, 03.07.0384_0087)"
-                    aria-label="Buscar peças por nome ou SKU"
-                    @keydown.enter="onSearchEnter"
-                  />
-                  <button
-                    v-if="query"
-                    type="button"
-                    class="dt-search__clear"
-                    aria-label="Limpar busca"
-                    @click="clearQuery"
-                  >
-                    <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">close</span>
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  class="dt-btn dt-btn--ghost dt-filter-trigger"
-                  :class="{ 'is-open': filtersOpen }"
-                  :aria-expanded="filtersOpen"
-                  aria-controls="dt-filter-panel-search"
-                  @click="toggleFilters"
-                >
-                  <span class="material-symbols-outlined dt-icon" aria-hidden="true">tune</span>
-                  Filtros
-                  <span v-if="activeFilterCount" class="dt-filter-trigger__count">{{ activeFilterCount }}</span>
-                </button>
-              </div>
-
-              <div class="dt-catalog__dock-cta">
-                <button
-                  type="button"
-                  class="dt-btn dt-btn--primary dt-catalog__dock-continue"
-                  :class="{ 'is-needs-size': needsSize }"
-                  :disabled="!canContinue"
-                  :title="continueHint || continueLabel"
-                  @click="$emit('continue')"
-                >
-                  <span>{{ continueLabel }}</span>
-                  <span
-                    v-if="!needsSize"
-                    class="material-symbols-outlined dt-icon"
-                    aria-hidden="true"
-                  >arrow_forward</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div v-if="!searchHasIntent" class="dt-catalog-search__hint">
-            Digite uma referência ou cole várias SKUs separadas por vírgula.
-          </div>
-
-          <div v-else class="dt-catalog-search__results dt-glass-2">
-            <div class="dt-catalog-search__results-head">
-              <div>
-                <strong v-if="isMultiSkuQuery">
-                  {{ multiSkuMatches.length }} de {{ searchTokens.length }} SKUs encontradas
-                </strong>
-                <strong v-else>
-                  {{ filtered.length }} resultado{{ filtered.length === 1 ? '' : 's' }}
-                </strong>
-              </div>
-              <button
-                v-if="addableSearchResults.length"
-                type="button"
-                class="dt-btn dt-btn--ghost dt-btn--sm"
-                @click="addAllMatches"
-              >
-                <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">playlist_add</span>
-                {{ isMultiSkuQuery ? 'Adicionar SKUs ao look' : 'Adicionar ao look' }}
-              </button>
-            </div>
-
-            <ul v-if="addableSearchResults.length" class="dt-catalog-search__list" role="list">
+            <ul class="dt-lookbar__list dt-lookbar__list--row">
+              <li v-if="!selectedList.length" class="dt-lookbar__empty">
+                Seus looks aparecerão aqui.
+              </li>
               <li
-                v-for="item in addableSearchResults"
-                :key="item.id"
-                class="dt-catalog-search__row"
-                :class="{ 'is-selected': isSelected(item) }"
+                v-for="piece in selectedList"
+                :key="piece.id"
+                class="dt-look-item"
+                :class="{ 'needs-size': pieceNeedsSize(piece) && !piece.size }"
               >
                 <div
-                  class="dt-media-skel dt-catalog-search__thumb"
-                  :class="{ 'is-loaded': isImageLoaded(item.image) }"
+                  class="dt-media-skel dt-look-item__thumb"
+                  :class="{ 'is-loaded': isImageLoaded(piece.image) }"
                 >
                   <img
-                    :src="item.image"
-                    :alt="item.name"
-                    :ref="(el) => bindImageEl(el, item.image)"
-                    @load="markImageLoaded(item.image)"
-                    @error="markImageLoaded(item.image)"
+                    :src="piece.image"
+                    :alt="piece.name"
+                    :ref="(el) => bindImageEl(el, piece.image)"
+                    @load="markImageLoaded(piece.image)"
+                    @error="markImageLoaded(piece.image)"
                   />
                 </div>
-
-                <div class="dt-catalog-search__meta">
-                  <div class="dt-card__ref">{{ item.ref }}</div>
-                  <div class="dt-catalog-search__name">{{ item.name }}</div>
-                  <div class="dt-card__meta">
-                    {{ categoryLabel(item.category) }} · {{ colorLabel(item.color) }} · {{ formatPrice(item.price) }}
-                  </div>
-
+                <div class="dt-look-item__body">
+                  <span class="dt-look-item__cat">{{ categoryLabel(piece.category) }}</span>
+                  <div class="dt-look-item__name">{{ piece.name }}</div>
                   <div
-                    v-if="isSelected(item) && pieceNeedsSize(item)"
-                    class="dt-catalog-search__sizes"
+                    v-if="pieceNeedsSize(piece)"
+                    class="dt-look-item__sizes"
                     role="group"
-                    :aria-label="'Tamanho de ' + item.name"
+                    :aria-label="'Tamanho de ' + piece.name"
                   >
                     <button
                       v-for="size in SIZE_FILTERS"
-                      :key="item.id + '-size-' + size"
+                      :key="piece.id + '-' + size"
                       type="button"
                       class="dt-filter-size dt-filter-size--sm"
-                      :class="{ 'is-active': selected[item.category]?.size === size }"
-                      :aria-pressed="selected[item.category]?.size === size"
-                      @click="onSetSize({ category: item.category, size })"
+                      :class="{ 'is-active': piece.size === size }"
+                      :aria-pressed="piece.size === size"
+                      @click="onSetSize({ category: piece.category, size })"
                     >{{ size }}</button>
                   </div>
+                  <div class="dt-card__price">{{ formatPrice(piece.price) }}</div>
                 </div>
-
                 <button
                   type="button"
-                  class="dt-btn dt-btn--sm"
-                  :class="isSelected(item) ? 'dt-btn--ghost is-favorited' : 'dt-btn--primary'"
-                  @click="isSelected(item) ? $emit('remove', item.category) : addPiece(item)"
+                  class="dt-look-item__remove"
+                  :aria-label="'Remover ' + piece.name"
+                  @click="$emit('remove', piece.category)"
                 >
-                  {{ isSelected(item) ? 'No look' : 'Adicionar' }}
+                  <span class="material-symbols-outlined dt-icon" aria-hidden="true">close</span>
                 </button>
               </li>
             </ul>
 
-            <p v-else class="dt-empty">Nenhuma peça encontrada para essa busca.</p>
+            <div v-if="selectedList.length" class="dt-lookbar__total">
+              Total · {{ formatPrice(lookTotal) }}
+            </div>
+
+            <div
+              class="dt-lookbar__search"
+              role="search"
+              aria-label="Busca, filtros e continuar"
+            >
+              <div
+                v-if="filtersOpen"
+                id="dt-filter-panel-search"
+                class="dt-filter-panel dt-filter-panel--dock"
+                role="region"
+                aria-label="Filtros do catálogo Dress To"
+              >
+                <div class="dt-filter-mega">
+                  <div
+                    v-for="col in FILTER_MENU"
+                    :key="'search-' + col.id"
+                    class="dt-filter-mega__col"
+                  >
+                    <h3 class="dt-filter-mega__heading">{{ col.label }}</h3>
+                    <ul class="dt-filter-mega__list">
+                      <li v-for="item in col.items" :key="'search-' + item">
+                        <button
+                          type="button"
+                          class="dt-filter-mega__link"
+                          :class="{ 'is-active': isTypeActive(item) }"
+                          :aria-pressed="isTypeActive(item)"
+                          @click="selectType(item)"
+                        >{{ item }}</button>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div v-if="showVestidoPanel" class="dt-filter-sub">
+                  <div class="dt-filter-mega__col">
+                    <h3 class="dt-filter-mega__heading">Vestidos</h3>
+                    <ul class="dt-filter-mega__list">
+                      <li v-for="item in VESTIDO_FILTERS" :key="'search-v-' + item">
+                        <button
+                          type="button"
+                          class="dt-filter-mega__link"
+                          :class="{ 'is-active': isVestidoActive(item) }"
+                          :aria-pressed="isVestidoActive(item)"
+                          @click="selectVestido(item)"
+                        >{{ item }}</button>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="dt-filter-panel__footer">
+                  <button
+                    type="button"
+                    class="dt-btn dt-btn--ghost dt-btn--sm"
+                    :disabled="!activeFilterCount"
+                    @click="clearFilters"
+                  >
+                    Limpar filtros
+                  </button>
+                  <button
+                    type="button"
+                    class="dt-btn dt-btn--primary dt-btn--sm"
+                    @click="filtersOpen = false"
+                  >
+                    Ver resultados
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="activeFilterCount" class="dt-filter-chips dt-filter-chips--dock">
+                <button
+                  v-for="chip in activeFilterChips"
+                  :key="'search-chip-' + chip.group + '-' + chip.label"
+                  type="button"
+                  class="dt-chip is-active"
+                  @click="removeChip(chip)"
+                >{{ chip.label }} ×</button>
+              </div>
+
+              <div class="dt-lookbar__search-bar">
+                <div class="dt-toolbar dt-toolbar--dock">
+                  <div class="dt-search">
+                    <span class="dt-search__icon" aria-hidden="true">
+                      <span class="material-symbols-outlined dt-icon">search</span>
+                    </span>
+                    <input
+                      ref="searchInputRef"
+                      v-model="query"
+                      type="search"
+                      placeholder="SKU, nome ou várias refs (ex: 02.08.3668_0038, 03.07.0384_0087)"
+                      aria-label="Buscar peças por nome ou SKU"
+                      @keydown.enter="onSearchEnter"
+                    />
+                    <button
+                      v-if="query"
+                      type="button"
+                      class="dt-search__clear"
+                      aria-label="Limpar busca"
+                      @click="clearQuery"
+                    >
+                      <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">close</span>
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    class="dt-btn dt-btn--ghost dt-filter-trigger"
+                    :class="{ 'is-open': filtersOpen }"
+                    :aria-expanded="filtersOpen"
+                    aria-controls="dt-filter-panel-search"
+                    @click="toggleFilters"
+                  >
+                    <span class="material-symbols-outlined dt-icon" aria-hidden="true">tune</span>
+                    Filtros
+                    <span v-if="activeFilterCount" class="dt-filter-trigger__count">{{ activeFilterCount }}</span>
+                  </button>
+                </div>
+
+                <div class="dt-catalog__dock-cta">
+                  <button
+                    type="button"
+                    class="dt-btn dt-btn--primary dt-catalog__dock-continue"
+                    :class="{ 'is-needs-size': needsSize }"
+                    :disabled="!canContinue"
+                    :title="continueHint || continueLabel"
+                    @click="$emit('continue')"
+                  >
+                    <span>{{ continueLabel }}</span>
+                    <span
+                      v-if="!needsSize"
+                      class="material-symbols-outlined dt-icon"
+                      aria-hidden="true"
+                    >arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div
+          v-if="searchHasIntent"
+          class="dt-catalog-search__results dt-glass-2"
+          :class="{ 'is-added': allAddableInLook }"
+        >
+          <div class="dt-catalog-search__results-head">
+            <div>
+              <strong v-if="allAddableInLook">
+                {{ searchResultsInLook.length }}
+                {{ searchResultsInLook.length === 1 ? 'peça no look' : 'peças no look' }}
+              </strong>
+              <strong v-else-if="isMultiSkuQuery">
+                {{ multiSkuMatches.length }} de {{ searchTokens.length }} SKUs encontradas
+              </strong>
+              <strong v-else>
+                {{ filtered.length }} resultado{{ filtered.length === 1 ? '' : 's' }}
+              </strong>
+              <p v-if="isMultiSkuQuery && !allAddableInLook" class="dt-catalog-search__results-hint">
+                Marque as peças que deseja adicionar ao look.
+              </p>
+            </div>
+            <button
+              v-if="isMultiSkuQuery && addableSearchResults.length && !allAddableInLook"
+              type="button"
+              class="dt-btn dt-btn--ghost dt-btn--sm"
+              :disabled="!pendingAddableCount"
+              @click="addSelectedMatches"
+            >
+              <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">playlist_add</span>
+              {{ pendingAddableCount
+                ? ('Adicionar ' + pendingAddableCount + ' ao look')
+                : 'Selecione SKUs' }}
+            </button>
+            <button
+              v-else-if="!isMultiSkuQuery && addableSearchResults.length && !allAddableInLook"
+              type="button"
+              class="dt-btn dt-btn--ghost dt-btn--sm"
+              @click="addAllMatches"
+            >
+              <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">playlist_add</span>
+              Adicionar ao look
+            </button>
+            <span
+              v-else-if="allAddableInLook"
+              class="dt-catalog-search__added-badge"
+            >
+              <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">check_circle</span>
+              Adicionadas
+            </span>
           </div>
+
+          <ul v-if="addableSearchResults.length && allAddableInLook" class="dt-catalog-search__list dt-catalog-search__list--compact" role="list">
+            <li
+              v-for="item in searchResultsInLook"
+              :key="'added-' + item.id"
+              class="dt-catalog-search__chip"
+            >
+              <div
+                class="dt-media-skel dt-catalog-search__chip-thumb"
+                :class="{ 'is-loaded': isImageLoaded(item.image) }"
+              >
+                <img
+                  :src="item.image"
+                  :alt="item.name"
+                  :ref="(el) => bindImageEl(el, item.image)"
+                  @load="markImageLoaded(item.image)"
+                  @error="markImageLoaded(item.image)"
+                />
+              </div>
+              <div class="dt-catalog-search__chip-meta">
+                <span class="dt-catalog-search__chip-ref">{{ item.ref }}</span>
+                <span class="dt-catalog-search__chip-name">{{ item.name }}</span>
+              </div>
+              <button
+                type="button"
+                class="dt-catalog-search__chip-remove"
+                :aria-label="'Remover ' + item.name + ' do look'"
+                @click="$emit('remove', item.category)"
+              >
+                <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">close</span>
+              </button>
+            </li>
+          </ul>
+
+          <ul v-else-if="addableSearchResults.length" class="dt-catalog-search__list" role="list">
+            <li
+              v-for="item in addableSearchResults"
+              :key="item.id"
+              class="dt-catalog-search__row"
+              :class="{
+                'is-selected': isSelected(item),
+                'is-pending': isMultiSkuQuery && isPendingSku(item) && !isSelected(item),
+              }"
+            >
+              <label
+                v-if="isMultiSkuQuery && !isSelected(item)"
+                class="dt-catalog-search__check"
+              >
+                <input
+                  type="checkbox"
+                  :checked="isPendingSku(item)"
+                  :aria-label="'Selecionar ' + item.name"
+                  @change="setPendingSku(item, $event.target.checked)"
+                />
+              </label>
+              <span
+                v-else-if="isMultiSkuQuery"
+                class="dt-catalog-search__check dt-catalog-search__check--done"
+                aria-hidden="true"
+              >
+                <span class="material-symbols-outlined dt-icon dt-icon--sm">check</span>
+              </span>
+
+              <div
+                class="dt-media-skel dt-catalog-search__thumb"
+                :class="{ 'is-loaded': isImageLoaded(item.image) }"
+              >
+                <img
+                  :src="item.image"
+                  :alt="item.name"
+                  :ref="(el) => bindImageEl(el, item.image)"
+                  @load="markImageLoaded(item.image)"
+                  @error="markImageLoaded(item.image)"
+                />
+              </div>
+
+              <div class="dt-catalog-search__meta">
+                <div class="dt-card__ref">{{ item.ref }}</div>
+                <div class="dt-catalog-search__name">{{ item.name }}</div>
+                <div class="dt-card__meta">
+                  {{ categoryLabel(item.category) }} · {{ colorLabel(item.color) }} · {{ formatPrice(item.price) }}
+                </div>
+
+                <div
+                  v-if="isSelected(item) && pieceNeedsSize(item)"
+                  class="dt-catalog-search__sizes"
+                  role="group"
+                  :aria-label="'Tamanho de ' + item.name"
+                >
+                  <button
+                    v-for="size in SIZE_FILTERS"
+                    :key="item.id + '-size-' + size"
+                    type="button"
+                    class="dt-filter-size dt-filter-size--sm"
+                    :class="{ 'is-active': selected[item.category]?.size === size }"
+                    :aria-pressed="selected[item.category]?.size === size"
+                    @click="onSetSize({ category: item.category, size })"
+                  >{{ size }}</button>
+                </div>
+              </div>
+
+              <button
+                v-if="!isMultiSkuQuery || isSelected(item)"
+                type="button"
+                class="dt-btn dt-btn--sm"
+                :class="isSelected(item) ? 'dt-btn--ghost is-favorited' : 'dt-btn--primary'"
+                @click="isSelected(item) ? $emit('remove', item.category) : addPiece(item)"
+              >
+                {{ isSelected(item) ? 'No look' : 'Adicionar' }}
+              </button>
+              <button
+                v-else
+                type="button"
+                class="dt-btn dt-btn--sm"
+                :class="isPendingSku(item) ? 'dt-btn--ghost is-pending-btn' : 'dt-btn--ghost'"
+                @click="togglePendingSku(item)"
+              >
+                {{ isPendingSku(item) ? 'Selecionada' : 'Selecionar' }}
+              </button>
+            </li>
+          </ul>
+
+          <p v-else class="dt-empty">Nenhuma peça encontrada para essa busca.</p>
         </div>
       </div>
 
