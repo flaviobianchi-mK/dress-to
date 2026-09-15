@@ -8,8 +8,10 @@ export default {
     layoutMode: { type: String, default: 'workspace' },
     lookPlacement: { type: String, default: 'floating' },
     showLayoutToggles: { type: Boolean, default: false },
+    favoritesCount: { type: Number, default: 0 },
+    historyCount: { type: Number, default: 0 },
   },
-  emits: ['logout', 'toggle-layout', 'toggle-look-placement'],
+  emits: ['logout', 'toggle-layout', 'toggle-look-placement', 'navigate'],
   setup(props) {
     const isWorkspace = computed(() => props.layoutMode === 'workspace');
     const isFloatingLook = computed(() => props.lookPlacement === 'floating');
@@ -31,6 +33,36 @@ export default {
       <div class="dt-brand__mode">Personal shopper · <span>Dress To</span></div>
 
       <div class="dt-header__actions">
+        <nav class="dt-header__nav" aria-label="Biblioteca de looks">
+          <button
+            type="button"
+            class="dt-header__nav-btn"
+            :class="{ 'is-active': current === 'favorites' }"
+            :aria-current="current === 'favorites' ? 'page' : undefined"
+            @click="$emit('navigate', 'favorites')"
+          >
+            <span
+              class="material-symbols-outlined dt-icon dt-icon--sm"
+              :class="{ 'dt-icon--fill': current === 'favorites' }"
+              aria-hidden="true"
+            >favorite</span>
+            <span>Favoritados</span>
+            <span v-if="favoritesCount" class="dt-header__nav-count">{{ favoritesCount }}</span>
+          </button>
+
+          <button
+            type="button"
+            class="dt-header__nav-btn"
+            :class="{ 'is-active': current === 'history' }"
+            :aria-current="current === 'history' ? 'page' : undefined"
+            @click="$emit('navigate', 'history')"
+          >
+            <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">history</span>
+            <span>Histórico</span>
+            <span v-if="historyCount" class="dt-header__nav-count">{{ historyCount }}</span>
+          </button>
+        </nav>
+
         <template v-if="showLayoutToggles">
           <button
             type="button"
