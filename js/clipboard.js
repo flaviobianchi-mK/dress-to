@@ -53,73 +53,26 @@ async function convertToPng(blob) {
   });
 }
 
+/** Resultado fixo do protótipo — sempre esta foto, independente da cliente/peças. */
+export const FIXED_TRY_ON_RESULT_URL = './assets/results/try-on-result.png';
+
 /**
- * Composição mock do provador virtual (sem API externa).
- * Usa só a foto da cliente no canvas — peças ficam no painel lateral.
- * Saída fixa Full HD 9:16 (1080×1920).
+ * Provador virtual mock: devolve sempre a foto fixa de resultado.
+ * Mantém o contrato dataUrl/blob para copiar, salvar e histórico.
  */
-export async function composeTryOn(photoUrl, pieces) {
-  const photo = await loadImage(photoUrl);
-  const canvas = document.createElement('canvas');
-  const outW = 1080;
-  const outH = 1920;
-  canvas.width = outW;
-  canvas.height = outH;
-  const ctx = canvas.getContext('2d');
-
-  ctx.fillStyle = '#F3F4F6';
-  ctx.fillRect(0, 0, outW, outH);
-
-  // cover 9:16 no canvas de saída
-  const targetAspect = outW / outH;
-  const srcAspect = photo.width / photo.height;
-  let sx = 0;
-  let sy = 0;
-  let sw = photo.width;
-  let sh = photo.height;
-  if (srcAspect > targetAspect) {
-    sw = photo.height * targetAspect;
-    sx = (photo.width - sw) / 2;
-  } else {
-    sh = photo.width / targetAspect;
-    sy = (photo.height - sh) / 2;
-  }
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(photo, sx, sy, sw, sh, 0, 0, outW, outH);
-
-  // Faixa inferior só com branding — sem thumbs de produto
-  const barH = Math.max(44, Math.round(outH * 0.08));
-  const grad = ctx.createLinearGradient(0, outH - barH * 1.6, 0, outH);
-  grad.addColorStop(0, 'rgba(26, 28, 28, 0)');
-  grad.addColorStop(1, 'rgba(26, 28, 28, 0.72)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, outH - barH * 1.6, outW, barH * 1.6);
-
-  const gap = 24;
-  ctx.fillStyle = '#DC0B9F';
-  ctx.font = '800 28px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText('mKFashion+', gap, outH - 28);
-
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.font = '500 18px "Plus Jakarta Sans", sans-serif';
-  const pieceCount = Array.isArray(pieces) ? pieces.length : 0;
-  const label = pieceCount
-    ? `Provador virtual · Dress To · ${pieceCount} peça${pieceCount > 1 ? 's' : ''}`
-    : 'Provador virtual · Dress To';
-  ctx.fillText(label, gap + 220, outH - 30);
-
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
-  return { dataUrl, blob, canvas };
+export async function composeTryOn(_photoUrl, _pieces) {
+  const res = await fetch(FIXED_TRY_ON_RESULT_URL);
+  if (!res.ok) throw new Error('Falha ao carregar resultado fixo do provador');
+  const blob = await res.blob();
+  const dataUrl = await blobToDataUrl(blob);
+  return { dataUrl, blob };
 }
 
-function loadImage(src) {
+function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    if (/^https?:/i.test(src)) img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error('Falha ao carregar imagem'));
-    img.src = src;
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Falha ao ler imagem de resultado'));
+    reader.readAsDataURL(blob);
   });
 }

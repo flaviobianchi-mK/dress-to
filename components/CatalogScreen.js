@@ -40,6 +40,29 @@ function parseSearchTokens(raw) {
   return [single];
 }
 
+/** Normaliza acentos para busca (macacao ≡ macacão). */
+function normalizeSearch(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '');
+}
+
+function searchRank(item, tokens) {
+  let score = Number(item.boost) || 0;
+  const name = normalizeSearch(item.name);
+  const ref = normalizeSearch(item.ref);
+  tokens.forEach((token) => {
+    const t = normalizeSearch(token);
+    if (!t) return;
+    if (name === t || ref === t) score += 80;
+    else if (name.startsWith(t)) score += 50;
+    else if (name.includes(` ${t}`) || name.includes(t)) score += 20;
+    if (ref.includes(t)) score += 15;
+  });
+  return score;
+}
+
 export default {
   name: 'CatalogScreen',
   props: {
@@ -138,8 +161,8 @@ export default {
       if (!label || label === 'Ver Tudo') return true;
       const keys = FILTER_KEYWORDS[label];
       if (!keys || !keys.length) return true;
-      const hay = `${item.name} ${item.ref}`.toLowerCase();
-      return keys.some((k) => hay.includes(k));
+      const hay = normalizeSearch(`${item.name} ${item.ref}`);
+      return keys.some((k) => hay.includes(normalizeSearch(k)));
     }
 
     function matchesAny(item, labels) {
@@ -148,10 +171,10 @@ export default {
     }
 
     function matchesToken(item, token) {
-      const t = token.toLowerCase();
-      const ref = String(item.ref || '').toLowerCase();
-      const name = String(item.name || '').toLowerCase();
-      const id = String(item.id || '').toLowerCase();
+      const t = normalizeSearch(token);
+      const ref = normalizeSearch(item.ref);
+      const name = normalizeSearch(item.name);
+      const id = normalizeSearch(item.id);
       return ref === t || ref.includes(t) || name.includes(t) || id === t;
     }
 
@@ -163,7 +186,7 @@ export default {
         !tokens.length &&
         (types.length > 0 || activeVestidos.value.length > 0);
 
-      return CATALOG.filter((item) => {
+      const list = CATALOG.filter((item) => {
         if (!matchesAny(item, types)) return false;
         if (!matchesAny(item, activeVestidos.value)) return false;
         if (!tokens.length) {
@@ -172,6 +195,17 @@ export default {
         }
         if (tokens.length === 1) return matchesToken(item, tokens[0]);
         return tokens.some((token) => matchesToken(item, token));
+      });
+
+      if (!tokens.length && !types.includes('Macacões')) {
+        return list;
+      }
+
+      const rankTokens = tokens.length ? tokens : ['macacão'];
+      return [...list].sort((a, b) => {
+        const rankDiff = searchRank(b, rankTokens) - searchRank(a, rankTokens);
+        if (rankDiff) return rankDiff;
+        return CATALOG.indexOf(a) - CATALOG.indexOf(b);
       });
     });
 
