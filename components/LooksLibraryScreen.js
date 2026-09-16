@@ -52,7 +52,7 @@ export default {
 
     function pieceSummary(look) {
       return (look.pieces || [])
-        .map((p) => (p.size ? `${p.ref} · ${p.size}` : p.ref))
+        .map((p) => p.ref)
         .join(' · ');
     }
 
@@ -141,27 +141,33 @@ export default {
   },
   template: `
     <section class="dt-screen dt-screen--library" :aria-labelledby="mode + '-title'">
-      <div class="dt-library__intro">
-        <button type="button" class="dt-btn dt-btn--ghost dt-btn--sm" @click="$emit('back')">
+      <header class="dt-library__header">
+        <button
+          type="button"
+          class="dt-btn dt-btn--ghost dt-btn--sm dt-library__back"
+          @click="$emit('back')"
+        >
           <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">arrow_back</span>
           Voltar ao atendimento
         </button>
 
-        <div class="dt-library__heading">
-          <h1 class="dt-screen__title" :id="mode + '-title'">{{ title }}</h1>
-          <p class="dt-screen__lead">{{ lead }}</p>
-        </div>
+        <div class="dt-library__intro">
+          <div class="dt-library__heading">
+            <h1 class="dt-screen__title" :id="mode + '-title'">{{ title }}</h1>
+            <p class="dt-screen__lead">{{ lead }}</p>
+          </div>
 
-        <button
-          v-if="!isFavorites && items.length"
-          type="button"
-          class="dt-btn dt-btn--ghost dt-btn--sm"
-          @click="requestClear"
-        >
-          <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">delete_sweep</span>
-          Limpar histórico
-        </button>
-      </div>
+          <button
+            v-if="!isFavorites && items.length"
+            type="button"
+            class="dt-btn dt-btn--ghost dt-btn--sm dt-library__clear"
+            @click="requestClear"
+          >
+            <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">delete_sweep</span>
+            Limpar histórico
+          </button>
+        </div>
+      </header>
 
       <div v-if="!items.length" class="dt-library__empty dt-glass-2" role="status">
         <span
@@ -240,7 +246,7 @@ export default {
               <button
                 v-if="!isFavorites"
                 type="button"
-                class="dt-btn dt-btn--ghost dt-btn--sm"
+                class="dt-btn dt-btn--ghost dt-btn--sm dt-library__delete"
                 aria-label="Remover do histórico"
                 @click="requestRemove(look)"
               >

@@ -1,10 +1,7 @@
 import {
   CATEGORIES,
-  SIZE_FILTERS,
   categoryLabel,
   formatPrice,
-  pieceNeedsSize,
-  pieceIsSized,
 } from '../js/catalog-data.js';
 
 const { reactive, computed } = Vue;
@@ -16,7 +13,7 @@ export default {
     selected: { type: Object, required: true },
     generating: { type: Boolean, default: false },
   },
-  emits: ['back', 'generate', 'set-size', 'remove', 'edit-catalog'],
+  emits: ['back', 'generate', 'remove', 'edit-catalog'],
   setup(props) {
     const loadedImages = reactive({});
 
@@ -28,9 +25,7 @@ export default {
       pieces.value.reduce((sum, p) => sum + (p.price || 0), 0),
     );
 
-    const canGenerate = computed(
-      () => pieces.value.length > 0 && pieces.value.every((p) => pieceIsSized(p)),
-    );
+    const canGenerate = computed(() => pieces.value.length > 0);
 
     function markImageLoaded(src) {
       if (src) loadedImages[src] = true;
@@ -41,13 +36,11 @@ export default {
     }
 
     return {
-      SIZE_FILTERS,
       pieces,
       lookTotal,
       canGenerate,
       categoryLabel,
       formatPrice,
-      pieceNeedsSize,
       isImageLoaded,
       markImageLoaded,
     };
@@ -57,7 +50,7 @@ export default {
       <header class="dt-generate-intro">
         <h1 class="dt-screen__title" id="generate-title">Gerar provador</h1>
         <p class="dt-screen__lead">
-          Confira o look, ajuste peças e tamanhos se precisar, e gere a imagem
+          Confira o look, ajuste as peças se precisar, e gere a imagem
           do provador virtual para enviar no Omnichat.
         </p>
       </header>
@@ -93,7 +86,6 @@ export default {
               v-for="piece in pieces"
               :key="piece.id"
               class="dt-look-item dt-look-item--editable"
-              :class="{ 'needs-size': pieceNeedsSize(piece) && !piece.size }"
             >
               <div class="dt-look-item__main">
                 <div
@@ -123,27 +115,6 @@ export default {
                   <span class="material-symbols-outlined dt-icon" aria-hidden="true">close</span>
                 </button>
               </div>
-
-              <div
-                v-if="pieceNeedsSize(piece)"
-                class="dt-look-item__sizes"
-                role="group"
-                :aria-label="'Tamanho de ' + piece.name"
-              >
-                <span class="dt-look-item__sizes-label">Tamanho</span>
-                <div class="dt-look-item__size-row">
-                  <button
-                    v-for="size in SIZE_FILTERS"
-                    :key="size"
-                    type="button"
-                    class="dt-filter-size"
-                    :class="{ 'is-active': piece.size === size }"
-                    :aria-pressed="piece.size === size"
-                    :disabled="generating"
-                    @click="$emit('set-size', { category: piece.category, size })"
-                  >{{ size }}</button>
-                </div>
-              </div>
             </li>
           </ul>
 
@@ -162,10 +133,6 @@ export default {
           <div v-if="pieces.length" class="dt-lookbar__total">
             Total · {{ formatPrice(lookTotal) }}
           </div>
-
-          <p v-if="pieces.length && !canGenerate" class="dt-lookbar__hint">
-            Defina o tamanho das peças que ainda estão pendentes.
-          </p>
         </div>
 
         <div class="dt-generate__panel dt-glass-2">
