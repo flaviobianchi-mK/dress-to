@@ -30,7 +30,6 @@ function snapshotPieces(pieces) {
     color: p.color,
     price: p.price,
     image: p.image,
-    size: p.size ?? null,
   }));
 }
 

@@ -930,15 +930,26 @@ a { color: inherit; }
   outline-offset: 2px;
 }
 
-.dt-lookbar--stage {
+.dt-lookbar--stage,
+.dt-lookbar.dt-lookbar--stage {
   position: static;
+  top: auto;
   max-height: none;
   overflow: visible;
   width: 100%;
   margin: 0;
   transition:
     box-shadow var(--mkf-dur-slow) var(--mkf-ease),
-    padding var(--mkf-dur-slow) var(--mkf-ease);
+    padding var(--mkf-dur-slow) var(--mkf-ease),
+    gap var(--mkf-dur-slow) var(--mkf-ease),
+    background-color var(--mkf-dur) var(--mkf-ease);
+}
+
+.dt-lookbar.dt-lookbar--stage.is-filters-open {
+  box-shadow:
+    0 22px 56px rgba(15, 23, 42, 0.14),
+    var(--mkf-shadow-soft);
+  gap: calc(var(--mkf-space-m) + 2px);
 }
 
 .dt-lookbar--stage.has-pieces {
@@ -1020,41 +1031,59 @@ a { color: inherit; }
   padding-right: 40px;
 }
 
+.dt-lookbar__search .dt-filter-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--mkf-dur-slow) var(--mkf-ease);
+}
+
+.dt-lookbar__search .dt-filter-collapse.is-open {
+  grid-template-rows: 1fr;
+}
+
+.dt-lookbar__search .dt-filter-collapse__clip {
+  min-height: 0;
+  overflow: hidden;
+}
+
 .dt-lookbar__search .dt-filter-panel--dock {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: calc(100% - 2px);
-  z-index: 40;
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  z-index: 2;
   width: 100%;
   margin: 0;
-  max-height: min(58vh, 420px);
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   background: var(--mkf-white);
   border: var(--mkf-stroke-xs) solid var(--mkf-line-strong);
   border-radius: var(--mkf-radius-l);
   box-shadow:
     0 18px 48px rgba(15, 23, 42, 0.18),
     0 2px 8px rgba(15, 23, 42, 0.06);
-  transform-origin: bottom center;
-  animation: dt-panel-stage-in var(--mkf-dur-panel) var(--mkf-ease) both;
-  /* overlay: não participa do fluxo / altura do lookbar */
+  transform-origin: top center;
+  animation: none;
+  opacity: 0;
+  transform: translateY(-10px) scale(0.985);
+  transition:
+    opacity var(--mkf-dur-slow) var(--mkf-ease),
+    transform var(--mkf-dur-slow) var(--mkf-ease),
+    box-shadow var(--mkf-dur) var(--mkf-ease),
+    margin var(--mkf-dur-slow) var(--mkf-ease);
+  pointer-events: none;
+}
+
+.dt-lookbar__search .dt-filter-collapse.is-open .dt-filter-panel--dock {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  margin: 0 0 4px;
+  pointer-events: auto;
 }
 
 .dt-lookbar__search .dt-filter-chips--dock {
   position: relative;
   z-index: 1;
-}
-
-@keyframes dt-panel-stage-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
 }
 
 @media (max-width: 720px) {
@@ -1072,6 +1101,7 @@ a { color: inherit; }
   display: grid;
   gap: var(--mkf-space-m);
   background: var(--mkf-white);
+  overflow: visible;
 }
 
 .dt-catalog-search__results.is-added {
@@ -1116,6 +1146,7 @@ a { color: inherit; }
   padding: 0;
   display: grid;
   gap: 10px;
+  overflow: visible;
 }
 
 .dt-catalog-search__list--compact {
@@ -1131,9 +1162,11 @@ a { color: inherit; }
   border-radius: var(--mkf-radius-s);
   border: var(--mkf-stroke-xs) solid var(--mkf-line);
   background: var(--mkf-white);
+  min-width: 0;
+  overflow: visible;
 }
 
-.dt-catalog-search__row:has(.dt-catalog-search__check) {
+.dt-catalog-search__row.is-selectable {
   grid-template-columns: 28px 56px minmax(0, 1fr) auto;
 }
 
@@ -1151,22 +1184,30 @@ a { color: inherit; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   width: 28px;
   height: 28px;
   margin: 0;
   cursor: pointer;
+  visibility: visible;
+  opacity: 1;
 }
 
 .dt-catalog-search__check input {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   accent-color: var(--mkf-pink);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-.dt-catalog-search__check--done {
-  color: var(--mkf-pink);
+.dt-catalog-search__check.is-checked input {
+  accent-color: var(--mkf-pink);
+}
+
+.dt-catalog-search__check input:disabled {
   cursor: default;
+  opacity: 1;
 }
 
 .dt-catalog-search__row .is-pending-btn {
@@ -1280,7 +1321,7 @@ a { color: inherit; }
     grid-template-columns: 48px minmax(0, 1fr);
   }
 
-  .dt-catalog-search__row:has(.dt-catalog-search__check) {
+  .dt-catalog-search__row.is-selectable {
     grid-template-columns: 28px 48px minmax(0, 1fr);
   }
 
@@ -1607,9 +1648,9 @@ a { color: inherit; }
 
 .dt-search input:focus {
   outline: none;
-  border-color: var(--mkf-pink);
+  border-color: var(--mkf-line-strong);
   background: var(--mkf-white);
-  box-shadow: 0 0 0 3px var(--mkf-pink-soft);
+  box-shadow: 0 0 0 3px rgba(26, 28, 28, 0.08);
 }
 
 .dt-search__icon {
@@ -2310,6 +2351,21 @@ a { color: inherit; }
   flex-direction: column;
   gap: var(--mkf-space-m);
   background: var(--mkf-white);
+}
+
+/* Stage lookbar hosts the filter panel in-flow above the search bar */
+.dt-lookbar.dt-lookbar--stage {
+  position: static;
+  top: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.dt-screen--catalog-search,
+.dt-catalog-search,
+.dt-catalog-search__cluster,
+.dt-lookbar__search {
+  overflow: visible;
 }
 
 .dt-lookbar__head {
@@ -3411,13 +3467,23 @@ body:has(.dt-main--workspace) {
   animation: dt-workspace-reveal var(--mkf-dur-slow) var(--mkf-ease) both;
   min-width: 0;
   padding: 16px;
+  align-items: center;
+}
+
+.dt-workspace--split .dt-workspace__col--result .dt-workspace__col-head {
+  align-self: stretch;
 }
 
 .dt-workspace--split .dt-workspace__col--result .dt-workspace__canvas {
   flex: 1 1 auto;
+  align-self: center;
   min-height: 0;
-  width: 100%;
+  width: auto;
+  max-width: 100%;
   height: 100%;
+  max-height: 100%;
+  aspect-ratio: 9 / 16;
+  margin: 0 auto;
 }
 
 @keyframes dt-workspace-reveal {
@@ -3757,15 +3823,43 @@ body:has(.dt-main--workspace) {
 .dt-workspace__canvas--result .dt-workspace__canvas-media {
   position: absolute;
   inset: 0;
-  display: block;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: inherit;
 }
 
-.dt-workspace__canvas--result img {
+.dt-workspace__canvas--result .dt-workspace__canvas-media > img {
   width: 100%;
   height: 100%;
   max-width: none;
   max-height: none;
-  object-fit: fill;
+  object-fit: contain;
+  object-position: center;
+}
+
+.dt-workspace__copy-image {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(15, 23, 42, 0.45) 0%,
+    rgba(15, 23, 42, 0.12) 55%,
+    transparent 100%
+  );
+}
+
+.dt-workspace__copy-image-btn {
+  pointer-events: auto;
+  min-width: min(100%, 220px);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.28);
 }
 
 .dt-workspace__canvas-overlay {
@@ -4024,6 +4118,7 @@ body:has(.dt-main--workspace) {
   gap: 8px;
   margin: 0;
   padding: 0;
+  width: 100%;
 }
 
 .dt-look-float__card {
@@ -4500,18 +4595,40 @@ body:has(.dt-main--workspace) {
   margin-bottom: 0;
 }
 
+.dt-library__header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--mkf-space-m);
+  margin-bottom: var(--mkf-space-2xl);
+}
+
+.dt-library__back {
+  align-self: flex-start;
+  margin-left: calc(var(--mkf-space-s) * -1);
+  color: var(--mkf-ink-muted);
+}
+
+.dt-library__back:hover {
+  color: var(--mkf-ink);
+}
+
 .dt-library__intro {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: flex-end;
   justify-content: space-between;
   gap: var(--mkf-space-l);
-  margin-bottom: var(--mkf-space-2xl);
 }
 
 .dt-library__heading {
   flex: 1 1 240px;
   min-width: 0;
+}
+
+.dt-library__clear {
+  flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .dt-library__empty {
@@ -4644,6 +4761,10 @@ body:has(.dt-main--workspace) {
   margin-top: auto;
 }
 
+.dt-library__delete {
+  margin-left: auto;
+}
+
 .dt-library__actions .is-favorited,
 .dt-workspace__favorite.is-favorited {
   color: var(--mkf-pink);
@@ -4723,6 +4844,11 @@ body:has(.dt-main--workspace) {
 
   .dt-library__intro {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dt-library__clear {
+    align-self: flex-start;
   }
 }
 

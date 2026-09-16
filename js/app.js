@@ -7,7 +7,7 @@ import ResultScreen from '../components/ResultScreen.js';
 import WorkspaceScreen from '../components/WorkspaceScreen.js';
 import LooksLibraryScreen from '../components/LooksLibraryScreen.js';
 import LoadingOverlay from '../components/LoadingOverlay.js';
-import { CATEGORIES, pieceIsSized } from './catalog-data.js';
+import { CATEGORIES } from './catalog-data.js';
 import { copyText, copyImageBlob, composeTryOn } from './clipboard.js';
 import {
   loadHistory,
@@ -88,7 +88,6 @@ createApp({
     const savedImage = ref(false);
     const lookFavorited = ref(false);
     const copiedRefId = ref(null);
-    const copiedAllRefs = ref(false);
     const toast = ref(null);
     const historyLooks = ref(loadHistory());
     const favoriteLooks = ref(loadFavorites());
@@ -143,10 +142,7 @@ createApp({
     }
 
     function piecesReady() {
-      return (
-        pieces.value.length > 0 &&
-        pieces.value.every((p) => pieceIsSized(p))
-      );
+      return pieces.value.length > 0;
     }
 
     function canGoTo(target) {
@@ -163,9 +159,9 @@ createApp({
       if (target === step.value) return;
       if (!canGoTo(target)) {
         const hints = {
-          upload: 'Selecione as peças e o tamanho de cada uma.',
-          workspace: 'Selecione as peças e o tamanho de cada uma.',
-          generate: 'Monte o look (com tamanhos) e envie a foto da cliente.',
+          upload: 'Selecione as peças do look.',
+          workspace: 'Selecione as peças do look.',
+          generate: 'Monte o look e envie a foto da cliente.',
           result: 'Gere o provador virtual primeiro.',
         };
         showToast(hints[target] || 'Etapa ainda não disponível.');
@@ -208,7 +204,6 @@ createApp({
       copiedImage.value = false;
       savedImage.value = false;
       copiedRefId.value = null;
-      copiedAllRefs.value = false;
 
       try {
         resultBlob.value = await dataUrlToBlob(look.resultUrl);
@@ -265,19 +260,9 @@ createApp({
       } else {
         selected.value = {
           ...selected.value,
-          [item.category]: { ...item, size: null },
+          [item.category]: { ...item },
         };
       }
-    }
-
-    function setPieceSize(payload) {
-      const { category, size } = payload;
-      const current = selected.value[category];
-      if (!current) return;
-      selected.value = {
-        ...selected.value,
-        [category]: { ...current, size },
-      };
     }
 
     function removePiece(category) {
@@ -320,7 +305,6 @@ createApp({
         savedImage.value = false;
         lookFavorited.value = false;
         copiedRefId.value = null;
-        copiedAllRefs.value = false;
         if (!isWorkspace.value) {
           step.value = 'result';
         }
@@ -371,7 +355,7 @@ createApp({
 
     async function onCopyRef(piece) {
       try {
-        const text = piece.size ? `${piece.ref} · Tam. ${piece.size}` : piece.ref;
+        const text = piece.ref;
         await copyText(text);
         copiedRefId.value = piece.id;
         showToast(`Referência ${piece.ref} copiada`, 'success');
@@ -380,23 +364,6 @@ createApp({
       } catch (err) {
         console.error(err);
         showToast('Falha ao copiar referência');
-      }
-    }
-
-    async function onCopyAllRefs() {
-      try {
-        const text = pieces.value
-          .map((p) => (p.size ? `${p.ref} · Tam. ${p.size}` : p.ref))
-          .join('\n');
-        if (!text) throw new Error('Sem referências');
-        await copyText(text);
-        copiedAllRefs.value = true;
-        showToast('Todas as referências copiadas', 'success');
-        clearFeedbackTimers();
-        feedbackTimers.push(setTimeout(() => { copiedAllRefs.value = false; }, 2000));
-      } catch (err) {
-        console.error(err);
-        showToast('Falha ao copiar referências');
       }
     }
 
@@ -475,7 +442,6 @@ createApp({
       savedImage.value = false;
       lookFavorited.value = false;
       copiedRefId.value = null;
-      copiedAllRefs.value = false;
       step.value = 'catalog';
       showToast('Novo atendimento iniciado', 'success');
     }
@@ -496,7 +462,6 @@ createApp({
       savedImage,
       lookFavorited,
       copiedRefId,
-      copiedAllRefs,
       toast,
       pieces,
       mainInert,
@@ -510,13 +475,11 @@ createApp({
       toggleLayout,
       toggleLookPlacement,
       togglePiece,
-      setPieceSize,
       removePiece,
       runGeneration,
       onCopyImage,
       onSaveImage,
       onCopyRef,
-      onCopyAllRefs,
       onToggleFavorite,
       onToggleFavoriteFromLibrary,
       onRemoveHistoryLook,
@@ -579,7 +542,6 @@ createApp({
             :has-photo="Boolean(photo?.url)"
             :layout-mode="layoutMode"
             @toggle="togglePiece"
-            @set-size="setPieceSize"
             @remove="removePiece"
             @continue="continueFromCatalog"
           />
@@ -601,7 +563,6 @@ createApp({
               :generating="generating"
               @back="step = 'upload'"
               @generate="runGeneration"
-              @set-size="setPieceSize"
               @remove="removePiece"
               @edit-catalog="step = 'catalog'"
             />
@@ -612,10 +573,8 @@ createApp({
               :pieces="pieces"
               :copied-image="copiedImage"
               :copied-ref-id="copiedRefId"
-              :copied-all-refs="copiedAllRefs"
               @copy-image="onCopyImage"
               @copy-ref="onCopyRef"
-              @copy-all-refs="onCopyAllRefs"
               @back="step = 'generate'"
               @regenerate="regenerate"
               @restart="restart"
@@ -631,15 +590,15 @@ createApp({
             :generating="generating"
             :saved-image="savedImage"
             :look-favorited="lookFavorited"
+            :copied-image="copiedImage"
             :copied-ref-id="copiedRefId"
-            :copied-all-refs="copiedAllRefs"
             :look-placement="lookPlacement"
             @update:photo="photo = $event"
             @generate="runGeneration"
             @edit-catalog="step = 'catalog'"
             @save-image="onSaveImage"
+            @copy-image="onCopyImage"
             @copy-ref="onCopyRef"
-            @copy-all-refs="onCopyAllRefs"
             @toggle-favorite="onToggleFavorite"
             @restart="restart"
           />

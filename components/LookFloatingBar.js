@@ -1,8 +1,6 @@
 import {
   categoryLabel,
   formatPrice,
-  pieceNeedsSize,
-  pieceIsSized,
 } from '../js/catalog-data.js';
 
 const { ref, reactive, computed } = Vue;
@@ -22,6 +20,11 @@ export default {
       props.pieces.reduce((sum, p) => sum + (p.price || 0), 0),
     );
 
+    const gridStyle = computed(() => {
+      const cols = Math.min(Math.max(props.pieces.length, 1), 3);
+      return { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` };
+    });
+
     function toggleMinimized() {
       minimized.value = !minimized.value;
     }
@@ -37,10 +40,9 @@ export default {
     return {
       minimized,
       lookTotal,
+      gridStyle,
       categoryLabel,
       formatPrice,
-      pieceNeedsSize,
-      pieceIsSized,
       toggleMinimized,
       isImageLoaded,
       markImageLoaded,
@@ -89,9 +91,6 @@ export default {
             @click="$emit('copy-ref', piece)"
           >
             <span class="dt-look-float__simple-name">{{ piece.name }}</span>
-            <span v-if="pieceNeedsSize(piece)" class="dt-look-float__simple-size">
-              {{ piece.size || '—' }}
-            </span>
             <span
               class="material-symbols-outlined dt-icon dt-icon--sm dt-look-float__simple-copy"
               aria-hidden="true"
@@ -100,12 +99,11 @@ export default {
         </li>
       </ul>
 
-      <ul v-else class="dt-look-float__grid">
+      <ul v-else class="dt-look-float__grid" :style="gridStyle">
         <li
           v-for="piece in pieces"
           :key="piece.id"
           class="dt-look-float__card"
-          :class="{ 'is-warn': pieceNeedsSize(piece) && !pieceIsSized(piece) }"
         >
           <div
             class="dt-media-skel dt-look-float__thumb"
@@ -120,9 +118,7 @@ export default {
           </div>
           <div class="dt-look-float__body">
             <span class="dt-look-float__cat">{{ categoryLabel(piece.category) }}</span>
-            <div class="dt-ref-row__ref">
-              {{ piece.ref }}<template v-if="pieceNeedsSize(piece)"> · {{ piece.size || '—' }}</template>
-            </div>
+            <div class="dt-ref-row__ref">{{ piece.ref }}</div>
             <div class="dt-look-float__name">{{ piece.name }}</div>
           </div>
           <button

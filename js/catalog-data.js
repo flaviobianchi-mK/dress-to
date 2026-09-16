@@ -123,20 +123,6 @@ export function formatPrice(value) {
   }).format(value);
 }
 
-export function pieceNeedsSize(pieceOrCategory) {
-  const category =
-    typeof pieceOrCategory === 'string'
-      ? pieceOrCategory
-      : pieceOrCategory?.category;
-  return Boolean(category) && category !== 'acessorio';
-}
-
-export function pieceIsSized(piece) {
-  if (!piece) return false;
-  if (!pieceNeedsSize(piece)) return true;
-  return Boolean(piece.size);
-}
-
 /** Filtros do site Dress To (mega menu) */
 export const FILTER_MENU = [
   {
@@ -184,8 +170,6 @@ export const FILTER_MENU = [
 ];
 
 export const VESTIDO_FILTERS = ['Curtos', 'Midi', 'Longos', 'Lisos', 'Estampados'];
-
-export const SIZE_FILTERS = ['XPP', 'PP', 'P', 'M', 'G', 'GG'];
 
 /** Mapeia filtro → keywords para o catálogo */
 export const FILTER_KEYWORDS = {

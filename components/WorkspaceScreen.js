@@ -2,8 +2,6 @@ import {
   CATEGORIES,
   categoryLabel,
   formatPrice,
-  pieceNeedsSize,
-  pieceIsSized,
 } from '../js/catalog-data.js';
 import {
   PHOTO_MAX_BYTES,
@@ -23,8 +21,8 @@ export default {
     generating: { type: Boolean, default: false },
     savedImage: { type: Boolean, default: false },
     lookFavorited: { type: Boolean, default: false },
+    copiedImage: { type: Boolean, default: false },
     copiedRefId: { type: String, default: null },
-    copiedAllRefs: { type: Boolean, default: false },
     lookPlacement: { type: String, default: 'floating' },
   },
   emits: [
@@ -32,8 +30,8 @@ export default {
     'generate',
     'edit-catalog',
     'save-image',
+    'copy-image',
     'copy-ref',
-    'copy-all-refs',
     'toggle-favorite',
     'restart',
   ],
@@ -74,24 +72,14 @@ export default {
       pieces.value.reduce((sum, p) => sum + (p.price || 0), 0),
     );
 
-    const missingSizes = computed(
-      () => pieces.value.filter((p) => pieceNeedsSize(p) && !pieceIsSized(p)).length,
-    );
-
     const canGenerate = computed(
-      () =>
-        hasPhoto.value &&
-        pieces.value.length > 0 &&
-        missingSizes.value === 0,
+      () => hasPhoto.value && pieces.value.length > 0,
     );
 
     const statusHint = computed(() => {
       if (error.value) return '';
       if (!pieces.value.length) return 'Volte ao catálogo e monte o look da cliente.';
       if (!hasPhoto.value) return 'Envie a foto recebida no WhatsApp e recorte no enquadramento 9:16.';
-      if (missingSizes.value) {
-        return `${missingSizes.value} peça${missingSizes.value > 1 ? 's' : ''} sem tamanho — edite no catálogo.`;
-      }
       if (!hasResult.value) return 'Tudo certo. Gere o provador virtual.';
       return 'Salve a imagem e copie as referências para colar no Omnichat.';
     });
@@ -215,14 +203,11 @@ export default {
       isFloatingLook,
       pieces,
       lookTotal,
-      missingSizes,
       canGenerate,
       statusHint,
       generateLabel,
       categoryLabel,
       formatPrice,
-      pieceNeedsSize,
-      pieceIsSized,
       isImageLoaded,
       markImageLoaded,
       bindImageEl,
@@ -280,7 +265,6 @@ export default {
             v-for="piece in pieces"
             :key="piece.id"
             class="dt-workspace__ref-card"
-            :class="{ 'is-warn': pieceNeedsSize(piece) && !pieceIsSized(piece) }"
           >
             <div
               class="dt-media-skel dt-workspace__ref-thumb"
@@ -297,9 +281,7 @@ export default {
             <div class="dt-workspace__ref-body">
               <span class="dt-workspace__ref-cat">{{ categoryLabel(piece.category) }}</span>
               <div class="dt-ref-row__name">{{ piece.name }}</div>
-              <div class="dt-ref-row__ref">
-                {{ piece.ref }}<template v-if="pieceNeedsSize(piece)"> · {{ piece.size || '—' }}</template>
-              </div>
+              <div class="dt-ref-row__ref">{{ piece.ref }}</div>
             </div>
             <button
               type="button"
@@ -467,6 +449,22 @@ export default {
                 @error="markImageLoaded(resultUrl)"
               />
             </div>
+            <div
+              v-if="hasResult && !generating"
+              class="dt-workspace__copy-image"
+            >
+              <button
+                type="button"
+                class="dt-btn dt-btn--primary dt-workspace__copy-image-btn"
+                :class="{ 'is-success': copiedImage }"
+                @click="$emit('copy-image')"
+              >
+                <span class="material-symbols-outlined dt-icon" aria-hidden="true">
+                  {{ copiedImage ? 'check' : 'content_copy' }}
+                </span>
+                {{ copiedImage ? 'Imagem copiada' : 'Copiar imagem' }}
+              </button>
+            </div>
             <span
               v-if="generating || !hasResult"
               class="dt-skel dt-skel--canvas"
@@ -500,18 +498,6 @@ export default {
                 >
                   <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">arrow_back</span>
                   Voltar
-                </button>
-
-                <button
-                  v-if="pieces.length"
-                  type="button"
-                  class="dt-btn dt-btn--sm"
-                  :class="copiedAllRefs ? 'dt-btn--primary is-success' : 'dt-btn--ghost'"
-                  :disabled="generating || cropping"
-                  @click="$emit('copy-all-refs')"
-                >
-                  <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">barcode</span>
-                  {{ copiedAllRefs ? 'SKUs copiadas' : 'Copiar SKUs' }}
                 </button>
               </div>
 
