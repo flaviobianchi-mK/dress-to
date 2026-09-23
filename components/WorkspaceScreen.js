@@ -1,21 +1,16 @@
-import {
-  CATEGORIES,
-  categoryLabel,
-  formatPrice,
-} from '../js/catalog-data.js';
+import { CATEGORIES } from '../js/catalog-data.js';
 import {
   loadImageFromBlob,
   PHOTO_MAX_BYTES,
 } from '../js/image.js';
 import { buildSizeRecommendations } from '../js/size-recommend.js';
 import PhotoCropModal from './PhotoCropModal.js';
-import LookFloatingBar from './LookFloatingBar.js';
 
 const { ref, reactive, computed, onMounted, onBeforeUnmount, watch, nextTick } = Vue;
 
 export default {
   name: 'WorkspaceScreen',
-  components: { PhotoCropModal, LookFloatingBar },
+  components: { PhotoCropModal },
   props: {
     photo: { type: Object, default: null },
     selected: { type: Object, required: true },
@@ -26,7 +21,6 @@ export default {
     lookFavorited: { type: Boolean, default: false },
     copiedImage: { type: Boolean, default: false },
     copiedRefId: { type: String, default: null },
-    lookPlacement: { type: String, default: 'floating' },
   },
   emits: [
     'update:photo',
@@ -51,10 +45,8 @@ export default {
 
     const hasPhoto = computed(() => Boolean(props.photo?.url));
     const hasResult = computed(() => Boolean(props.resultUrl));
-    const showResultCol = computed(() => hasResult.value || props.generating);
     const measuresLocked = computed(() => hasResult.value || props.generating);
     const cropping = computed(() => Boolean(cropSource.value));
-    const isFloatingLook = computed(() => props.lookPlacement === 'floating');
 
     function markImageLoaded(src) {
       if (src) loadedImages[src] = true;
@@ -71,10 +63,6 @@ export default {
 
     const pieces = computed(() =>
       CATEGORIES.map((c) => props.selected[c.id]).filter(Boolean),
-    );
-
-    const lookTotal = computed(() =>
-      pieces.value.reduce((sum, p) => sum + (p.price || 0), 0),
     );
 
     const canGenerate = computed(
@@ -210,9 +198,9 @@ export default {
       document.documentElement.style.removeProperty('--dt-dock-clearance');
     });
 
-    watch(isFloatingLook, () => nextTick(bindDockObserver));
     watch(pieces, () => nextTick(updateDockClearance));
-    watch(showResultCol, () => nextTick(updateDockClearance));
+    watch(hasResult, () => nextTick(updateDockClearance));
+    watch(() => props.generating, () => nextTick(updateDockClearance));
 
     return {
       dragging,
@@ -224,16 +212,11 @@ export default {
       cropping,
       hasPhoto,
       hasResult,
-      showResultCol,
       measuresLocked,
-      isFloatingLook,
       pieces,
       sizeRecommendations,
-      lookTotal,
       canGenerate,
       generateLabel,
-      categoryLabel,
-      formatPrice,
       isImageLoaded,
       markImageLoaded,
       bindImageEl,
@@ -251,10 +234,7 @@ export default {
   template: `
     <section
       class="dt-screen dt-screen--workspace"
-      :class="{
-        'is-complete': hasResult,
-        'is-floating-look': isFloatingLook,
-      }"
+      :class="{ 'is-complete': hasResult }"
       aria-labelledby="workspace-title"
     >
       <header class="dt-workspace-intro">
@@ -270,61 +250,7 @@ export default {
         </div>
       </header>
 
-      <aside
-        v-if="!isFloatingLook"
-        class="dt-workspace-refs dt-glass-2"
-        aria-label="Look selecionado"
-      >
-        <div class="dt-workspace-refs-head">
-          <div class="dt-workspace-refs-title">
-            <h2>Look</h2>
-            <span v-if="pieces.length" class="dt-workspace-refs-count">
-              {{ pieces.length }} peça{{ pieces.length > 1 ? 's' : '' }}
-            </span>
-          </div>
-          <div class="dt-workspace-refs-meta">
-            <span v-if="pieces.length" class="dt-workspace-refs-total">{{ formatPrice(lookTotal) }}</span>
-          </div>
-        </div>
-
-        <ul v-if="pieces.length" class="dt-workspace-refs-grid">
-          <li
-            v-for="piece in pieces"
-            :key="piece.id"
-            class="dt-workspace-ref-card"
-          >
-            <div
-              class="dt-media-skel dt-workspace-ref-thumb"
-              :class="{ 'is-loaded': isImageLoaded(piece.image) }"
-            >
-              <img
-                :src="piece.image"
-                :alt="piece.name"
-                :ref="(el) => bindImageEl(el, piece.image)"
-                @load="markImageLoaded(piece.image)"
-                @error="markImageLoaded(piece.image)"
-              />
-            </div>
-            <div class="dt-workspace-ref-body">
-              <span class="dt-workspace-ref-cat">{{ categoryLabel(piece.category) }}</span>
-              <div class="dt-ref-row-name">{{ piece.name }}</div>
-              <div class="dt-ref-row-ref">{{ piece.ref }}</div>
-            </div>
-            <button
-              type="button"
-              class="dt-btn dt-btn--sm"
-              :class="copiedRefId === piece.id ? 'dt-btn--primary is-success' : 'dt-btn--outline'"
-              :aria-label="'Copiar referência ' + piece.ref"
-              @click="$emit('copy-ref', piece)"
-            >
-              {{ copiedRefId === piece.id ? 'OK' : 'Copiar' }}
-            </button>
-          </li>
-        </ul>
-        <p v-else class="dt-lookbar-hint">Nenhuma peça selecionada — edite o catálogo para continuar.</p>
-      </aside>
-
-      <div class="dt-workspace" :class="{ 'dt-workspace--solo': !showResultCol, 'dt-workspace--split': showResultCol }">
+      <div class="dt-workspace dt-workspace--split">
         <div class="dt-workspace-col dt-workspace-col--photo dt-glass-2">
           <div class="dt-workspace-photo-row">
             <div class="dt-workspace-photo-side">
@@ -483,6 +409,7 @@ export default {
               </div>
 
               <div
+                v-if="hasResult"
                 class="dt-size-recs"
                 role="region"
                 aria-labelledby="dt-size-recs-title"
@@ -513,11 +440,25 @@ export default {
                     <div class="dt-size-rec-body">
                       <span class="dt-size-rec-cat">{{ item.pieceLabel }}</span>
                       <div class="dt-size-rec-name">{{ item.piece.name }}</div>
+                      <div class="dt-size-rec-ref">{{ item.piece.ref }}</div>
                     </div>
                     <strong
                       class="dt-size-rec-size"
                       :class="{ 'is-pending': item.pending }"
                     >{{ item.sizeLabel }}</strong>
+                    <button
+                      type="button"
+                      class="dt-btn dt-btn--sm dt-size-rec-copy"
+                      :class="copiedRefId === item.piece.id ? 'dt-btn--primary is-success' : 'dt-btn--outline'"
+                      :aria-label="'Copiar referência ' + item.piece.ref"
+                      :title="'Copiar ' + item.piece.ref"
+                      @click="$emit('copy-ref', item.piece)"
+                    >
+                      <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">
+                        {{ copiedRefId === item.piece.id ? 'check' : 'content_copy' }}
+                      </span>
+                      {{ copiedRefId === item.piece.id ? 'OK' : 'Copiar' }}
+                    </button>
                   </li>
                 </ul>
 
@@ -534,8 +475,8 @@ export default {
         </div>
 
         <div
-          v-if="showResultCol"
           class="dt-workspace-col dt-workspace-col--result dt-glass-2"
+          :class="{ 'is-awaiting': !hasResult && !generating }"
         >
           <div class="dt-workspace-col-head">
             <div class="dt-workspace-col-copy">
@@ -564,7 +505,10 @@ export default {
           <div class="dt-workspace-result-stage">
             <div
               class="dt-workspace-canvas dt-workspace-canvas--result"
-              :class="{ 'is-ready': hasResult && !generating }"
+              :class="{
+                'is-ready': hasResult && !generating,
+                'is-awaiting': !hasResult && !generating,
+              }"
               :aria-busy="generating ? 'true' : 'false'"
             >
               <div
@@ -579,29 +523,36 @@ export default {
                   @load="markImageLoaded(resultUrl)"
                   @error="markImageLoaded(resultUrl)"
                 />
+                <div
+                  v-if="!generating"
+                  class="dt-workspace-copy-image"
+                >
+                  <button
+                    type="button"
+                    class="dt-btn dt-btn--primary dt-workspace-copy-image-btn"
+                    :class="{ 'is-success': copiedImage }"
+                    @click="$emit('copy-image')"
+                  >
+                    <span class="material-symbols-outlined dt-icon" aria-hidden="true">
+                      {{ copiedImage ? 'check' : 'content_copy' }}
+                    </span>
+                    {{ copiedImage ? 'Imagem copiada' : 'Copiar imagem' }}
+                  </button>
+                </div>
               </div>
               <span
-                v-if="generating || !hasResult"
+                v-if="generating"
                 class="dt-skel dt-skel--canvas"
                 aria-hidden="true"
               ></span>
-            </div>
-
-            <div
-              v-if="hasResult && !generating"
-              class="dt-workspace-copy-image"
-            >
-              <button
-                type="button"
-                class="dt-btn dt-btn--primary dt-workspace-copy-image-btn"
-                :class="{ 'is-success': copiedImage }"
-                @click="$emit('copy-image')"
+              <div
+                v-else-if="!hasResult"
+                class="dt-workspace-result-empty"
               >
-                <span class="material-symbols-outlined dt-icon" aria-hidden="true">
-                  {{ copiedImage ? 'check' : 'content_copy' }}
-                </span>
-                {{ copiedImage ? 'Imagem copiada' : 'Copiar imagem' }}
-              </button>
+                <span class="material-symbols-outlined dt-icon dt-icon--lg" aria-hidden="true">checkroom</span>
+                <strong>Resultado do look</strong>
+                <span>Aparece aqui depois de gerar.</span>
+              </div>
             </div>
           </div>
         </div>
@@ -609,13 +560,6 @@ export default {
 
       <Teleport to="body">
         <div ref="dockStackRef" class="dt-workspace-dock-stack">
-          <LookFloatingBar
-            v-if="isFloatingLook"
-            :pieces="pieces"
-            :copied-ref-id="copiedRefId"
-            @copy-ref="$emit('copy-ref', $event)"
-          />
-
           <div
             class="dt-workspace-dock"
             role="toolbar"

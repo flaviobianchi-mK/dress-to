@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────
-   Workspace — foto, medidas, dock, look float
+   Workspace — foto, medidas, dock
    ───────────────────────────────────────────── */
 
 /* ——— Workspace (foto + resultado) — cabe em 100vh ——— */
@@ -33,24 +33,15 @@ body:has(.dt-main--workspace) {
   flex-direction: column;
 }
 
-.dt-main--workspace:has(.is-floating-look) {
-  padding-bottom: var(--dt-dock-clearance, 220px);
-}
-
 .dt-screen--workspace {
   flex: 1;
   min-height: 0;
   height: 100%;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 10px;
   overflow: hidden;
   animation: none;
-}
-
-.dt-screen--workspace.is-floating-look {
-  /* Sem aside de refs: intro + workspace ocupam as 2 faixas */
-  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .dt-workspace-intro {
@@ -63,7 +54,7 @@ body:has(.dt-main--workspace) {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   text-align: center;
 }
 
@@ -92,11 +83,6 @@ body:has(.dt-main--workspace) {
   min-height: 0;
   height: 100%;
   align-items: stretch;
-}
-
-.dt-workspace--solo {
-  grid-template-columns: minmax(0, min(1100px, calc(100vw - 24px)));
-  justify-content: center;
 }
 
 .dt-workspace--split {
@@ -128,9 +114,9 @@ body:has(.dt-main--workspace) {
 .dt-workspace .dt-measures {
   display: flex;
   flex-direction: column;
-  flex: 0 0 220px;
-  width: 220px;
-  max-width: 220px;
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
   align-self: stretch;
   padding: 14px;
   gap: 0;
@@ -141,7 +127,7 @@ body:has(.dt-main--workspace) {
 }
 
 .dt-workspace .dt-measures-fields {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .dt-workspace .dt-size-recs {
@@ -150,7 +136,7 @@ body:has(.dt-main--workspace) {
 
 .dt-workspace--split .dt-workspace-photo-row {
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
 }
 
 .dt-workspace--split .dt-measures {
@@ -159,12 +145,8 @@ body:has(.dt-main--workspace) {
   max-width: 100%;
 }
 
-.dt-workspace--split .dt-measures-fields {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
 .dt-workspace--split .dt-size-rec {
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
 }
 
 .dt-workspace--split .dt-workspace-col--result {
@@ -198,6 +180,42 @@ body:has(.dt-main--workspace) {
   /* Não forçar 9:16 com height 100% — isso estoura a largura e a coluna corta a foto */
   aspect-ratio: unset;
   margin: 0;
+}
+
+.dt-workspace-canvas--result.is-awaiting {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(70% 55% at 50% 40%, rgba(255, 255, 255, 0.55), transparent 70%),
+    var(--mkf-surface-soft);
+  border: var(--mkf-stroke-xs) dashed var(--mkf-line-strong);
+}
+
+.dt-workspace-result-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px;
+  text-align: center;
+  color: var(--mkf-ink-subtle);
+}
+
+.dt-workspace-result-empty strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--mkf-ink);
+}
+
+.dt-workspace-result-empty span:last-child {
+  font-size: 13px;
+  line-height: 1.4;
+  max-width: 22ch;
+}
+
+.dt-workspace-col--result.is-awaiting {
+  box-shadow: none;
 }
 
 @keyframes dt-workspace-reveal {
@@ -296,8 +314,8 @@ body:has(.dt-main--workspace) {
 .dt-workspace-photo-row {
   display: flex;
   flex-direction: row;
-  align-items: stretch;
-  justify-content: center;
+  align-items: center;
+  justify-content: flex-start;
   gap: 14px;
   min-height: 0;
   flex: 1 1 auto;
@@ -313,10 +331,6 @@ body:has(.dt-main--workspace) {
   flex: 0 1 auto;
   width: min(100%, calc(min(85vh, 880px) * 9 / 16));
   max-width: min(100%, calc(min(85vh, 880px) * 9 / 16));
-}
-
-.dt-workspace--solo .dt-workspace-photo-side {
-  margin-inline: 0;
 }
 
 .dt-workspace-photo-side .dt-workspace-canvas--upload {
@@ -460,7 +474,7 @@ body:has(.dt-main--workspace) {
 
 .dt-size-rec {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto;
+  grid-template-columns: 40px minmax(0, 1fr) auto auto;
   gap: 10px;
   align-items: center;
   padding: 8px 10px;
@@ -507,6 +521,15 @@ body:has(.dt-main--workspace) {
   white-space: nowrap;
 }
 
+.dt-size-rec-ref {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--mkf-ink-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .dt-size-rec-size {
   flex-shrink: 0;
   min-width: 4.5rem;
@@ -518,6 +541,12 @@ body:has(.dt-main--workspace) {
   line-height: 1;
   background: var(--mkf-surface-soft);
   color: var(--mkf-ink);
+}
+
+.dt-size-rec-copy {
+  flex-shrink: 0;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .dt-size-rec-size.is-pending {
@@ -872,10 +901,9 @@ body:has(.dt-main--workspace) {
 
 .dt-workspace-result-stage {
   display: flex;
-  flex-direction: row;
-  align-items: flex-end;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  gap: 12px;
   width: 100%;
   min-width: 0;
   min-height: 0;
@@ -885,17 +913,19 @@ body:has(.dt-main--workspace) {
 .dt-workspace-result-stage .dt-workspace-canvas {
   flex: 1 1 auto;
   min-width: 0;
+  width: 100%;
 }
 
 .dt-workspace-copy-image {
-  position: static;
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
   z-index: 3;
   display: flex;
-  flex: 0 0 auto;
-  align-items: flex-end;
-  justify-content: center;
+  align-items: center;
+  justify-content: flex-end;
   padding: 0;
-  pointer-events: auto;
+  pointer-events: none;
   background: none;
 }
 
@@ -903,7 +933,7 @@ body:has(.dt-main--workspace) {
   pointer-events: auto;
   min-width: 0;
   white-space: nowrap;
-  box-shadow: var(--mkf-shadow-soft);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.28);
 }
 
 .dt-workspace-canvas-overlay {
@@ -997,7 +1027,8 @@ body:has(.dt-main--workspace) {
   left: 50%;
   bottom: max(16px, env(safe-area-inset-bottom, 0px));
   z-index: 40;
-  width: min(1100px, calc(100vw - 24px));
+  /* Mesma largura útil do .dt-main--workspace (1280 − padding 20+20) */
+  width: min(1240px, calc(100vw - 40px));
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
@@ -1029,210 +1060,6 @@ body:has(.dt-main--workspace) {
     inset 0 1px 0 rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(22px) saturate(1.35);
   -webkit-backdrop-filter: blur(22px) saturate(1.35);
-}
-
-.dt-look-float {
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.52);
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 20px;
-  box-shadow:
-    0 14px 36px rgba(15, 23, 42, 0.1),
-    0 2px 8px rgba(15, 23, 42, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(22px) saturate(1.35);
-  -webkit-backdrop-filter: blur(22px) saturate(1.35);
-}
-
-.dt-look-float-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.dt-look-float-title {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 8px;
-  min-width: 0;
-}
-
-.dt-look-float-title strong {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--mkf-ink);
-}
-
-.dt-look-float-count {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--mkf-ink-subtle);
-}
-
-.dt-look-float-total {
-  font-size: 13px;
-  font-weight: 800;
-  color: #1c1c1c;
-  letter-spacing: -0.01em;
-}
-
-.dt-look-float-toggle {
-  flex-shrink: 0;
-}
-
-.dt-look-float-empty {
-  margin: 0;
-  font-size: 12px;
-  color: var(--mkf-ink-muted);
-}
-
-.dt-look-float-simple {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-}
-
-.dt-look-float-simple li {
-  max-width: 100%;
-}
-
-.dt-look-float-simple-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  padding: 6px 10px;
-  border-radius: var(--mkf-radius-pill);
-  background: var(--mkf-surface-muted);
-  border: var(--mkf-stroke-xs) solid var(--mkf-line);
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-
-.dt-look-float-simple-btn:hover {
-  border-color: var(--mkf-line-strong);
-  background: var(--mkf-menu-surface);
-}
-
-.dt-look-float-simple-btn.is-copied {
-  border-color: var(--mkf-pink);
-  background: color-mix(in srgb, var(--mkf-pink) 12%, white);
-}
-
-.dt-look-float-simple-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: #1c1c1c;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 180px;
-}
-
-.dt-look-float-simple-size {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--mkf-ink-subtle);
-}
-
-.dt-look-float-simple-copy {
-  flex-shrink: 0;
-  color: var(--mkf-ink-subtle);
-  font-size: 14px;
-}
-
-.dt-look-float-simple-btn.is-copied .dt-look-float-simple-copy {
-  color: var(--mkf-pink);
-}
-
-.dt-look-float-grid {
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-}
-
-.dt-look-float-card {
-  display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  padding: 8px;
-  border-radius: var(--mkf-radius-s);
-  background: var(--mkf-white);
-  border: var(--mkf-stroke-xs) solid var(--mkf-line);
-  min-width: 0;
-}
-
-.dt-look-float-card.is-warn {
-  border-color: rgba(251, 91, 18, 0.35);
-  background: rgba(251, 91, 18, 0.04);
-}
-
-.dt-look-float-card img,
-.dt-look-float-thumb {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  background: #111;
-  flex-shrink: 0;
-}
-
-.dt-look-float-thumb {
-  overflow: hidden;
-}
-
-.dt-look-float-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: inherit;
-}
-
-.dt-look-float-body {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.dt-look-float-cat {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--mkf-ink-subtle);
-}
-
-.dt-look-float-name {
-  font-size: 12px;
-  color: var(--mkf-ink-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dt-look-float.is-minimized .dt-look-float-grid {
-  display: none;
-}
-
-@media (max-width: 900px) {
-  .dt-look-float-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .dt-workspace-dock-bar {
@@ -1283,7 +1110,11 @@ body:has(.dt-main--workspace) {
   min-width: 148px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  .dt-workspace-dock-stack {
+    width: min(1240px, calc(100vw - 32px));
+  }
+
   .dt-workspace-dock-bar {
     grid-template-columns: 1fr;
   }

@@ -1,6 +1,5 @@
 import {
   CATEGORIES,
-  categoryLabel,
   formatPrice,
 } from '../js/catalog-data.js';
 
@@ -39,7 +38,6 @@ export default {
       pieces,
       lookTotal,
       canGenerate,
-      categoryLabel,
       formatPrice,
       isImageLoaded,
       markImageLoaded,
@@ -83,7 +81,7 @@ export default {
 
           <ul v-if="pieces.length" class="dt-summary-pieces">
             <li
-              v-for="piece in pieces"
+              v-for="(piece, index) in pieces"
               :key="piece.id"
               class="dt-look-item dt-look-item--editable"
             >
@@ -100,7 +98,7 @@ export default {
                   />
                 </div>
                 <div class="dt-look-item-body">
-                  <span class="dt-look-item-cat">{{ categoryLabel(piece.category) }}</span>
+                  <span class="dt-look-item-cat">Peça {{ index + 1 }}</span>
                   <div class="dt-look-item-name">{{ piece.name }}</div>
                   <div class="dt-card-ref">{{ piece.ref }}</div>
                   <div class="dt-card-price">{{ formatPrice(piece.price) }}</div>

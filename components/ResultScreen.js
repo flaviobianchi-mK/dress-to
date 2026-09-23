@@ -1,4 +1,4 @@
-import { categoryLabel, formatPrice } from '../js/catalog-data.js';
+import { formatPrice } from '../js/catalog-data.js';
 
 const { reactive, computed } = Vue;
 
@@ -27,7 +27,6 @@ export default {
     }
 
     return {
-      categoryLabel,
       formatPrice,
       lookTotal,
       isImageLoaded,
@@ -49,7 +48,7 @@ export default {
             </div>
 
             <ul class="dt-ref-list">
-              <li v-for="piece in pieces" :key="piece.id" class="dt-ref-row">
+              <li v-for="(piece, index) in pieces" :key="piece.id" class="dt-ref-row">
                 <div
                   class="dt-media-skel dt-ref-row-thumb"
                   :class="{ 'is-loaded': isImageLoaded(piece.image) }"
@@ -62,9 +61,9 @@ export default {
                   />
                 </div>
                 <div>
+                  <span class="dt-look-item-cat">Peça {{ index + 1 }}</span>
                   <div class="dt-ref-row-ref">{{ piece.ref }}</div>
                   <div class="dt-ref-row-name">{{ piece.name }}</div>
-                  <span class="dt-look-item-cat">{{ categoryLabel(piece.category) }}</span>
                   <div class="dt-card-price">{{ formatPrice(piece.price) }}</div>
                 </div>
                 <button
