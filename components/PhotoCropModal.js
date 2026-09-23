@@ -203,8 +203,8 @@ export default {
   },
   template: `
     <div class="dt-crop" role="dialog" aria-modal="true" aria-labelledby="dt-crop-title">
-      <div class="dt-crop__panel">
-        <header class="dt-crop__head">
+      <div class="dt-crop-panel">
+        <header class="dt-crop-head">
           <div>
             <h2 id="dt-crop-title">Recortar foto</h2>
             <p>Arraste para enquadrar · zoom para aproximar · saída {{ PHOTO_WIDTH }}×{{ PHOTO_HEIGHT }} (9:16)</p>
@@ -217,7 +217,7 @@ export default {
 
         <div
           ref="stageRef"
-          class="dt-crop__stage"
+          class="dt-crop-stage"
           :class="{ 'is-dragging': dragging }"
           @pointerdown="onPointerDown"
           @pointermove="onPointerMove"
@@ -226,17 +226,17 @@ export default {
         >
           <img
             v-if="sourceUrl"
-            class="dt-crop__img"
+            class="dt-crop-img"
             :src="sourceUrl"
             :style="imgStyle"
             alt="Foto para recorte"
             draggable="false"
           />
-          <div class="dt-crop__frame" aria-hidden="true"></div>
+          <div class="dt-crop-frame" aria-hidden="true"></div>
         </div>
 
-        <div class="dt-crop__controls">
-          <label class="dt-crop__zoom">
+        <div class="dt-crop-controls">
+          <label class="dt-crop-zoom">
             <span>Zoom</span>
             <input
               v-model.number="zoom"
@@ -247,8 +247,8 @@ export default {
               :disabled="applying"
             />
           </label>
-          <p v-if="error" class="dt-upload__error" role="alert">{{ error }}</p>
-          <div class="dt-crop__actions">
+          <p v-if="error" class="dt-upload-error" role="alert">{{ error }}</p>
+          <div class="dt-crop-actions">
             <button
               type="button"
               class="dt-btn dt-btn--outline"

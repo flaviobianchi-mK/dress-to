@@ -1,0 +1,70 @@
+/* ─────────────────────────────────────────────
+   Layout mode toggle
+   ───────────────────────────────────────────── */
+
+/* ——— Layout mode toggle ——— */
+
+.dt-layout-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 10px 0 6px;
+  border-radius: var(--mkf-radius-pill);
+  border: 1px solid var(--mkf-line);
+  background: var(--mkf-glass-2);
+  color: var(--mkf-ink-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition:
+    border-color var(--mkf-dur) var(--mkf-ease),
+    color var(--mkf-dur) var(--mkf-ease),
+    background var(--mkf-dur) var(--mkf-ease);
+}
+
+.dt-layout-toggle:hover {
+  color: var(--mkf-ink);
+  border-color: var(--mkf-line-strong);
+  background: var(--mkf-glass-3);
+}
+
+.dt-layout-toggle:focus-visible {
+  outline: 2px solid var(--mkf-pink);
+  outline-offset: 2px;
+}
+
+.dt-layout-toggle[aria-pressed="true"] {
+  color: var(--mkf-ink);
+  border-color: var(--mkf-pink);
+  background: var(--mkf-pink-soft);
+}
+
+.dt-layout-toggle-track {
+  position: relative;
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.dt-layout-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--mkf-ink-muted);
+  transition: transform var(--mkf-dur) var(--mkf-ease), background var(--mkf-dur) var(--mkf-ease);
+}
+
+.dt-layout-toggle[aria-pressed="true"] .dt-layout-toggle-thumb {
+  transform: translateX(12px);
+  background: var(--mkf-pink);
+}
+
+.dt-layout-toggle-label {
+  white-space: nowrap;
+}

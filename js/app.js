@@ -57,6 +57,10 @@ function readLookPlacement() {
   return saved === 'inline' ? 'inline' : 'floating';
 }
 
+function emptyMeasures() {
+  return { heightCm: '', weightKg: '', age: '' };
+}
+
 createApp({
   components: {
     StepHeader,
@@ -79,6 +83,7 @@ createApp({
     const previousStep = ref('catalog');
     const photo = ref(null);
     const selected = ref(emptySelection());
+    const clientMeasures = ref(emptyMeasures());
     const resultUrl = ref(null);
     const resultBlob = ref(null);
     const currentLookId = ref(null);
@@ -133,6 +138,7 @@ createApp({
       if (photo.value?.url) URL.revokeObjectURL(photo.value.url);
       photo.value = null;
       selected.value = emptySelection();
+      clientMeasures.value = emptyMeasures();
       resultUrl.value = null;
       resultBlob.value = null;
       currentLookId.value = null;
@@ -149,7 +155,9 @@ createApp({
       if (target === 'catalog' || LIBRARY_STEPS.has(target)) return true;
       if (target === 'workspace') return piecesReady() || Boolean(resultUrl.value);
       if (target === 'upload') return piecesReady();
-      if (target === 'generate') return piecesReady() && Boolean(photo.value?.url);
+      if (target === 'generate') {
+        return piecesReady() && Boolean(photo.value?.url);
+      }
       if (target === 'result') return Boolean(resultUrl.value);
       return false;
     }
@@ -275,7 +283,13 @@ createApp({
     }
 
     async function runGeneration() {
-      if (!photo.value?.url || !piecesReady() || generating.value) return;
+      if (
+        !photo.value?.url
+        || !piecesReady()
+        || generating.value
+      ) {
+        return;
+      }
 
       generating.value = true;
       progressMsg.value = PROGRESS_MESSAGES[0];
@@ -435,6 +449,7 @@ createApp({
       if (photo.value?.url) URL.revokeObjectURL(photo.value.url);
       photo.value = null;
       selected.value = emptySelection();
+      clientMeasures.value = emptyMeasures();
       resultUrl.value = null;
       resultBlob.value = null;
       currentLookId.value = null;
@@ -455,6 +470,7 @@ createApp({
       step,
       photo,
       selected,
+      clientMeasures,
       resultUrl,
       generating,
       progressMsg,
@@ -551,7 +567,9 @@ createApp({
             <PhotoUploadScreen
               v-if="step === 'upload'"
               :photo="photo"
+              :measures="clientMeasures"
               @update:photo="photo = $event"
+              @update:measures="clientMeasures = $event"
               @back="step = 'catalog'"
               @continue="step = 'generate'"
             />
@@ -586,6 +604,7 @@ createApp({
             v-else-if="step === 'workspace'"
             :photo="photo"
             :selected="selected"
+            :measures="clientMeasures"
             :result-url="resultUrl"
             :generating="generating"
             :saved-image="savedImage"
@@ -594,6 +613,7 @@ createApp({
             :copied-ref-id="copiedRefId"
             :look-placement="lookPlacement"
             @update:photo="photo = $event"
+            @update:measures="clientMeasures = $event"
             @generate="runGeneration"
             @edit-catalog="step = 'catalog'"
             @save-image="onSaveImage"

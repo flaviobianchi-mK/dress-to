@@ -1,0 +1,1161 @@
+/* ─────────────────────────────────────────────
+   Workspace — foto, medidas, dock, look float
+   ───────────────────────────────────────────── */
+
+/* ——— Workspace (foto + resultado) — cabe em 100vh ——— */
+
+.dt-app:has(.dt-main--workspace) {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+html:has(.dt-main--workspace),
+body:has(.dt-main--workspace) {
+  height: 100%;
+  overflow: hidden;
+}
+
+.dt-app:has(.dt-main--workspace) .dt-header {
+  position: relative;
+  flex-shrink: 0;
+  padding-block: 8px;
+}
+
+.dt-main--workspace {
+  flex: 1;
+  min-height: 0;
+  width: min(1280px, 100%);
+  margin: 0 auto;
+  padding: 10px 20px var(--dt-dock-clearance, 96px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dt-main--workspace:has(.is-floating-look) {
+  padding-bottom: var(--dt-dock-clearance, 220px);
+}
+
+.dt-screen--workspace {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  overflow: hidden;
+  animation: none;
+}
+
+.dt-screen--workspace.is-floating-look {
+  /* Sem aside de refs: intro + workspace ocupam as 2 faixas */
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.dt-workspace-intro {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.dt-workspace-intro-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.dt-workspace-intro .dt-upload-intro-eyebrow {
+  margin: 0 0 4px;
+}
+
+.dt-workspace-intro .dt-screen-title {
+  font-size: clamp(22px, 2.4vw, 28px);
+  margin: 0 0 4px;
+  line-height: 1.1;
+}
+
+.dt-workspace-intro-lead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--mkf-ink-muted);
+  max-width: 52ch;
+}
+
+.dt-workspace {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  min-height: 0;
+  height: 100%;
+  align-items: stretch;
+}
+
+.dt-workspace--solo {
+  grid-template-columns: minmax(0, min(1100px, calc(100vw - 24px)));
+  justify-content: center;
+}
+
+.dt-workspace--split {
+  grid-template-columns: minmax(320px, 0.48fr) minmax(0, 1fr);
+}
+
+.dt-workspace--split .dt-workspace-col--photo {
+  padding: 12px;
+  gap: 8px;
+  overflow: auto;
+}
+
+.dt-workspace--split .dt-workspace-col--photo .dt-workspace-canvas {
+  flex: 0 1 auto;
+  width: 100%;
+  max-width: 100%;
+  max-height: none;
+  aspect-ratio: 9 / 16;
+  height: auto;
+  margin-inline: auto;
+}
+
+.dt-workspace--split .dt-workspace-photo-side {
+  max-width: min(100%, calc(min(70vh, 720px) * 9 / 16));
+  width: 100%;
+  margin-inline: auto;
+}
+
+.dt-workspace .dt-measures {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 220px;
+  width: 220px;
+  max-width: 220px;
+  align-self: stretch;
+  padding: 14px;
+}
+
+.dt-workspace .dt-measures-fields {
+  grid-template-columns: 1fr;
+}
+
+.dt-workspace--split .dt-workspace-photo-row {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.dt-workspace--split .dt-measures {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
+}
+
+.dt-workspace--split .dt-measures-fields {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dt-workspace--split .dt-workspace-col--result {
+  animation: dt-workspace-reveal var(--mkf-dur-slow) var(--mkf-ease) both;
+  min-width: 0;
+  padding: 16px;
+  align-items: center;
+}
+
+.dt-workspace--split .dt-workspace-col--result .dt-workspace-col-head {
+  align-self: stretch;
+}
+
+.dt-workspace--split .dt-workspace-col--result .dt-workspace-canvas {
+  flex: 1 1 auto;
+  align-self: center;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  /* Não forçar 9:16 com height 100% — isso estoura a largura e a coluna corta a foto */
+  aspect-ratio: unset;
+  margin: 0 auto;
+}
+
+@keyframes dt-workspace-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dt-workspace-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.dt-workspace-col--result {
+  border-color: var(--mkf-line-strong);
+  box-shadow: var(--mkf-shadow-soft);
+}
+
+.dt-workspace-col-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+
+.dt-workspace-col-head-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dt-workspace-col-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.dt-workspace-col-copy h2 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.dt-workspace-col-copy p {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--mkf-ink-subtle);
+}
+
+.dt-workspace-favorite {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.dt-workspace-favorite.is-favorited {
+  color: var(--mkf-pink);
+}
+
+.dt-workspace-col-actions {
+  display: none;
+}
+
+.dt-workspace-photo-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  justify-content: stretch;
+  gap: 10px;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.dt-workspace-photo-actions .dt-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  gap: 6px;
+}
+
+.dt-workspace-photo-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: center;
+  gap: 14px;
+  min-height: 0;
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+.dt-workspace-photo-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  flex: 0 1 auto;
+  width: min(100%, calc(min(85vh, 880px) * 9 / 16));
+  max-width: min(100%, calc(min(85vh, 880px) * 9 / 16));
+}
+
+.dt-workspace--solo .dt-workspace-photo-side {
+  margin-inline: 0;
+}
+
+.dt-workspace-photo-side .dt-workspace-canvas--upload {
+  flex: 0 1 auto;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: min(85vh, 880px);
+  aspect-ratio: 9 / 16;
+  margin-inline: 0;
+}
+
+.dt-measures {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(200px, 260px);
+  gap: 14px 16px;
+  align-items: stretch;
+  align-self: stretch;
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  padding: 14px 16px;
+  border: var(--mkf-stroke-xs) solid var(--mkf-line);
+  border-radius: var(--mkf-radius-l);
+  background: var(--mkf-surface-soft);
+}
+
+.dt-measures-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dt-measures-head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.dt-measures-head p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--mkf-ink-subtle);
+}
+
+.dt-measures-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dt-measures-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dt-measures-field span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mkf-ink-muted);
+}
+
+.dt-measures-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: var(--mkf-stroke-xs) solid var(--mkf-line-strong);
+  border-radius: var(--mkf-radius-m);
+  background: var(--mkf-white);
+  color: var(--mkf-ink);
+  font: inherit;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.dt-measures-field input::-webkit-outer-spin-button,
+.dt-measures-field input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.dt-measures-field input:focus {
+  outline: 2px solid var(--mkf-pink-soft);
+  border-color: var(--mkf-pink);
+}
+
+.dt-measures-field input:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.dt-measures.is-locked {
+  opacity: 0.92;
+}
+
+.dt-measures.is-locked .dt-measures-head p {
+  color: var(--mkf-ink-muted);
+}
+
+.dt-measures-result {
+  margin-top: 0;
+  padding: 12px 14px;
+  border-radius: var(--mkf-radius-m);
+  background: var(--mkf-white);
+  border: var(--mkf-stroke-xs) dashed var(--mkf-line-strong);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.dt-measures-result-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--mkf-ink-subtle);
+}
+
+.dt-measures-result strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--mkf-ink);
+}
+
+.dt-measures-result p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--mkf-ink-muted);
+}
+
+.dt-upload--with-measures {
+  align-items: stretch;
+}
+
+.dt-upload-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dt-upload-side .dt-preview {
+  flex: 0 0 auto;
+}
+
+.dt-upload-side .dt-measures {
+  flex: 1 1 auto;
+}
+
+.dt-workspace-step {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--mkf-pink);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.dt-workspace-step--done {
+  background: var(--mkf-pink);
+}
+
+.dt-workspace-footer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dt-screen--workspace .dt-lookbar-hint,
+.dt-screen--workspace .dt-upload-error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.dt-workspace-checklist {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mkf-ink-subtle);
+}
+
+.dt-workspace-checklist li {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 0;
+  color: inherit;
+  font: inherit;
+}
+
+.dt-workspace-checklist li + li::before {
+  content: none;
+}
+
+.dt-workspace-checklist li.is-done {
+  color: var(--mkf-ink-muted);
+}
+
+.dt-workspace-checklist li.is-done::after {
+  content: "check";
+  font-family: "Material Symbols Outlined";
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 1;
+  margin-left: 2px;
+  color: var(--mkf-success);
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 300,
+    "GRAD" 0,
+    "opsz" 20;
+}
+
+.dt-workspace-generate {
+  width: 100%;
+  min-height: 44px;
+  font-size: 14px;
+  transition:
+    transform var(--mkf-dur) var(--mkf-ease),
+    box-shadow var(--mkf-dur) var(--mkf-ease);
+}
+
+.dt-workspace-dock .dt-btn.is-ready:not(:disabled),
+.dt-workspace-generate.is-ready:not(:disabled) {
+  animation: dt-cta-ready 1.8s var(--mkf-ease) infinite;
+}
+
+@keyframes dt-cta-ready {
+  0%,
+  100% {
+    box-shadow: var(--mkf-shadow-cta);
+  }
+  50% {
+    box-shadow: 0 6px 18px rgba(220, 11, 159, 0.38);
+  }
+}
+
+/* Canvas preenche o espaço restante; upload dentro do preview 9:16 */
+.dt-workspace-canvas {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  height: auto;
+  max-height: none;
+  aspect-ratio: unset;
+  margin: 0;
+  border-radius: var(--mkf-radius-m);
+  overflow: hidden;
+  background:
+    radial-gradient(90% 70% at 50% 8%, rgba(220, 11, 159, 0.05), transparent 58%),
+    linear-gradient(165deg, #FFFFFF 0%, #F7F7F8 48%, #F1F2F4 100%);
+  border: var(--mkf-stroke-xs) solid var(--mkf-line);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    var(--mkf-shadow-soft);
+  display: grid;
+  place-items: center;
+}
+
+.dt-workspace-canvas--upload {
+  cursor: pointer;
+  aspect-ratio: 9 / 16;
+  border: 1px dashed var(--mkf-line-strong);
+  transition:
+    border-color var(--mkf-dur) var(--mkf-ease),
+    box-shadow var(--mkf-dur) var(--mkf-ease),
+    transform var(--mkf-dur) var(--mkf-ease),
+    background var(--mkf-dur) var(--mkf-ease);
+}
+
+.dt-workspace-canvas--upload:hover,
+.dt-workspace-canvas--upload:focus-visible {
+  border-color: var(--mkf-gray-100);
+  border-style: solid;
+  outline: none;
+  background:
+    radial-gradient(90% 70% at 50% 8%, rgba(220, 11, 159, 0.07), transparent 58%),
+    linear-gradient(165deg, #FFFFFF 0%, #F5F5F6 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 0 0 3px rgba(26, 28, 28, 0.04),
+    var(--mkf-shadow-soft);
+}
+
+.dt-workspace-canvas--upload.is-dragging {
+  border-color: var(--mkf-pink);
+  border-style: solid;
+  box-shadow:
+    inset 0 0 0 1px var(--mkf-pink-soft),
+    0 0 0 3px var(--mkf-pink-soft);
+  transform: scale(0.995);
+}
+
+.dt-workspace-canvas--upload.is-processing {
+  cursor: wait;
+}
+
+.dt-workspace-canvas--upload input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  z-index: 3;
+  border-radius: 16px;
+}
+
+.dt-workspace-canvas.is-ready {
+  background:
+    linear-gradient(180deg, #F8F8F9 0%, #EEEEF0 100%);
+  border: var(--mkf-stroke-xs) solid var(--mkf-line);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+}
+
+.dt-workspace-canvas--result.is-ready {
+  border-color: var(--mkf-line-strong);
+}
+
+.dt-workspace-canvas img,
+.dt-workspace-canvas-img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  z-index: 1;
+}
+
+.dt-workspace-canvas-media {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+}
+
+.dt-workspace-canvas--upload .dt-workspace-canvas-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.dt-workspace-canvas--upload .dt-workspace-canvas-media img,
+.dt-workspace-canvas--upload .dt-workspace-canvas-img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+  object-position: center top;
+}
+
+/* No canvas, a foto fica visível mesmo antes do flag is-loaded;
+   o shimmer (::after) cobre até o load — evita “foto sumida” se o evento falhar. */
+.dt-workspace-canvas .dt-media-skel img {
+  opacity: 1;
+}
+
+.dt-workspace-canvas .dt-media-skel:not(.is-loaded)::after {
+  opacity: 0.92;
+}
+
+.dt-workspace-canvas--upload.is-ready {
+  /* Frame 9:16 fixo; a foto preenche com object-fit: cover */
+  min-height: 0;
+}
+
+.dt-workspace-canvas-media img {
+  position: relative;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.dt-workspace-canvas--upload .dt-workspace-canvas-media img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.dt-workspace-canvas--result .dt-workspace-canvas-media {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.dt-workspace-canvas--result .dt-workspace-canvas-media > img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.dt-workspace-copy-image {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(15, 23, 42, 0.45) 0%,
+    rgba(15, 23, 42, 0.12) 55%,
+    transparent 100%
+  );
+}
+
+.dt-workspace-copy-image-btn {
+  pointer-events: auto;
+  min-width: min(100%, 220px);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.28);
+}
+
+.dt-workspace-canvas-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: transparent;
+  opacity: 0;
+  transition: opacity var(--mkf-dur) var(--mkf-ease), background var(--mkf-dur) var(--mkf-ease);
+}
+
+.dt-workspace-canvas-overlay.is-empty {
+  opacity: 1;
+  background:
+    radial-gradient(70% 55% at 50% 40%, rgba(255, 255, 255, 0.35), transparent 70%);
+}
+
+.dt-workspace-canvas--upload:hover .dt-workspace-canvas-overlay,
+.dt-workspace-canvas--upload:focus-visible .dt-workspace-canvas-overlay,
+.dt-workspace-canvas--upload.is-dragging .dt-workspace-canvas-overlay,
+.dt-workspace-canvas--upload.is-processing .dt-workspace-canvas-overlay {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.dt-workspace-canvas--upload.is-ready:hover .dt-workspace-canvas-overlay,
+.dt-workspace-canvas--upload.is-ready:focus-visible .dt-workspace-canvas-overlay,
+.dt-workspace-canvas--upload.is-ready.is-dragging .dt-workspace-canvas-overlay,
+.dt-workspace-canvas--upload.is-ready.is-processing .dt-workspace-canvas-overlay {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.dt-workspace-canvas-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+  color: var(--mkf-ink);
+  max-width: 90%;
+}
+
+.dt-workspace-canvas-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--mkf-white);
+  color: var(--mkf-ink);
+  border: var(--mkf-stroke-xs) solid var(--mkf-line);
+  box-shadow: var(--mkf-shadow-soft);
+}
+
+.dt-workspace-canvas-icon .dt-icon {
+  font-size: 28px;
+  color: inherit;
+}
+
+.dt-workspace-canvas-cta strong {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.dt-workspace-canvas-cta span {
+  font-size: 12px;
+  color: var(--mkf-ink-muted);
+  max-width: 28ch;
+}
+
+.dt-workspace-result-actions {
+  display: none;
+}
+
+.dt-workspace-copy-main {
+  font-weight: 700;
+  gap: 8px;
+}
+
+/* ——— Workspace dock (mesmo padrão do catálogo) ——— */
+
+.dt-workspace-dock-stack {
+  position: fixed;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  width: min(1100px, calc(100vw - 24px));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.dt-workspace-dock-stack > * {
+  pointer-events: auto;
+}
+
+.dt-workspace-dock {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  z-index: auto;
+  width: 100%;
+  transform: none;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 20px;
+  box-shadow:
+    0 18px 48px rgba(15, 23, 42, 0.12),
+    0 2px 8px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(22px) saturate(1.35);
+  -webkit-backdrop-filter: blur(22px) saturate(1.35);
+}
+
+.dt-look-float {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 20px;
+  box-shadow:
+    0 14px 36px rgba(15, 23, 42, 0.1),
+    0 2px 8px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(22px) saturate(1.35);
+  -webkit-backdrop-filter: blur(22px) saturate(1.35);
+}
+
+.dt-look-float-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dt-look-float-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dt-look-float-title strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mkf-ink);
+}
+
+.dt-look-float-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mkf-ink-subtle);
+}
+
+.dt-look-float-total {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1c1c1c;
+  letter-spacing: -0.01em;
+}
+
+.dt-look-float-toggle {
+  flex-shrink: 0;
+}
+
+.dt-look-float-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--mkf-ink-muted);
+}
+
+.dt-look-float-simple {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.dt-look-float-simple li {
+  max-width: 100%;
+}
+
+.dt-look-float-simple-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: var(--mkf-radius-pill);
+  background: var(--mkf-surface-muted);
+  border: var(--mkf-stroke-xs) solid var(--mkf-line);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.dt-look-float-simple-btn:hover {
+  border-color: var(--mkf-line-strong);
+  background: var(--mkf-menu-surface);
+}
+
+.dt-look-float-simple-btn.is-copied {
+  border-color: var(--mkf-pink);
+  background: color-mix(in srgb, var(--mkf-pink) 12%, white);
+}
+
+.dt-look-float-simple-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1c1c1c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.dt-look-float-simple-size {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mkf-ink-subtle);
+}
+
+.dt-look-float-simple-copy {
+  flex-shrink: 0;
+  color: var(--mkf-ink-subtle);
+  font-size: 14px;
+}
+
+.dt-look-float-simple-btn.is-copied .dt-look-float-simple-copy {
+  color: var(--mkf-pink);
+}
+
+.dt-look-float-grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.dt-look-float-card {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px;
+  border-radius: var(--mkf-radius-s);
+  background: var(--mkf-white);
+  border: var(--mkf-stroke-xs) solid var(--mkf-line);
+  min-width: 0;
+}
+
+.dt-look-float-card.is-warn {
+  border-color: rgba(251, 91, 18, 0.35);
+  background: rgba(251, 91, 18, 0.04);
+}
+
+.dt-look-float-card img,
+.dt-look-float-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: #111;
+  flex-shrink: 0;
+}
+
+.dt-look-float-thumb {
+  overflow: hidden;
+}
+
+.dt-look-float-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.dt-look-float-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dt-look-float-cat {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mkf-ink-subtle);
+}
+
+.dt-look-float-name {
+  font-size: 12px;
+  color: var(--mkf-ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dt-look-float.is-minimized .dt-look-float-grid {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .dt-look-float-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dt-workspace-dock-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.dt-workspace-dock-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dt-workspace-dock-sep {
+  width: 1px;
+  height: 24px;
+  background: var(--mkf-line);
+  margin-inline: 2px;
+  flex-shrink: 0;
+}
+
+.dt-workspace-dock-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  min-width: min(420px, 48vw);
+}
+
+.dt-workspace-dock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dt-workspace-dock-actions .dt-btn {
+  min-height: 40px;
+  min-width: 148px;
+  white-space: nowrap;
+}
+
+.dt-workspace-dock-actions .dt-btn--primary {
+  min-width: 148px;
+}
+
+@media (max-width: 900px) {
+  .dt-workspace-dock-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .dt-workspace-dock-cta {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .dt-workspace-dock-actions {
+    justify-content: stretch;
+  }
+
+  .dt-workspace-dock-actions .dt-btn {
+    flex: 1 1 auto;
+  }
+}

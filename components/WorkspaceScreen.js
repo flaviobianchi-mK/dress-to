@@ -4,6 +4,7 @@ import {
   formatPrice,
 } from '../js/catalog-data.js';
 import {
+  loadImageFromBlob,
   PHOTO_MAX_BYTES,
 } from '../js/image.js';
 import PhotoCropModal from './PhotoCropModal.js';
@@ -17,6 +18,7 @@ export default {
   props: {
     photo: { type: Object, default: null },
     selected: { type: Object, required: true },
+    measures: { type: Object, required: true },
     resultUrl: { type: String, default: null },
     generating: { type: Boolean, default: false },
     savedImage: { type: Boolean, default: false },
@@ -27,6 +29,7 @@ export default {
   },
   emits: [
     'update:photo',
+    'update:measures',
     'generate',
     'edit-catalog',
     'save-image',
@@ -48,6 +51,7 @@ export default {
     const hasPhoto = computed(() => Boolean(props.photo?.url));
     const hasResult = computed(() => Boolean(props.resultUrl));
     const showResultCol = computed(() => hasResult.value || props.generating);
+    const measuresLocked = computed(() => hasResult.value || props.generating);
     const cropping = computed(() => Boolean(cropSource.value));
     const isFloatingLook = computed(() => props.lookPlacement === 'floating');
 
@@ -76,17 +80,16 @@ export default {
       () => hasPhoto.value && pieces.value.length > 0,
     );
 
-    const statusHint = computed(() => {
-      if (error.value) return '';
-      if (!pieces.value.length) return 'Volte ao catálogo e monte o look da cliente.';
-      if (!hasPhoto.value) return 'Envie a foto recebida no WhatsApp e recorte no enquadramento 9:16.';
-      if (!hasResult.value) return 'Tudo certo. Gere o provador virtual.';
-      return 'Salve a imagem e copie as referências para colar no Omnichat.';
-    });
-
     const generateLabel = computed(() =>
       hasResult.value ? 'Gerar novamente' : 'Gerar look',
     );
+
+    function updateMeasure(key, event) {
+      emit('update:measures', {
+        ...props.measures,
+        [key]: event.target.value,
+      });
+    }
 
     function updateDockClearance() {
       const el = dockStackRef.value;
@@ -108,7 +111,7 @@ export default {
       dockObserver.observe(el);
     }
 
-    function acceptFile(file) {
+    async function acceptFile(file) {
       error.value = '';
       if (!file) return;
       if (!file.type.startsWith('image/')) {
@@ -120,11 +123,27 @@ export default {
         return;
       }
 
-      cropSource.value = {
-        blob: file,
-        name: file.name || 'foto.jpg',
-      };
-      if (inputRef.value) inputRef.value.value = '';
+      processing.value = true;
+      try {
+        const img = await loadImageFromBlob(file);
+        if (props.photo?.url) URL.revokeObjectURL(props.photo.url);
+        const url = URL.createObjectURL(file);
+        emit('update:photo', {
+          file,
+          blob: file,
+          url,
+          width: img.width,
+          height: img.height,
+          name: file.name || 'foto.jpg',
+          sourceBlob: file,
+          sourceName: file.name || 'foto.jpg',
+        });
+      } catch {
+        error.value = 'Não foi possível processar a imagem. Tente outro arquivo.';
+      } finally {
+        processing.value = false;
+        if (inputRef.value) inputRef.value.value = '';
+      }
     }
 
     function onFileChange(e) {
@@ -200,17 +219,18 @@ export default {
       hasPhoto,
       hasResult,
       showResultCol,
+      measuresLocked,
       isFloatingLook,
       pieces,
       lookTotal,
       canGenerate,
-      statusHint,
       generateLabel,
       categoryLabel,
       formatPrice,
       isImageLoaded,
       markImageLoaded,
       bindImageEl,
+      updateMeasure,
       onFileChange,
       onDrop,
       clearPhoto,
@@ -231,43 +251,43 @@ export default {
       aria-labelledby="workspace-title"
     >
       <header class="dt-workspace-intro">
-        <div class="dt-workspace-intro__copy">
-          <h1 class="dt-screen__title" id="workspace-title">
+        <div class="dt-workspace-intro-copy">
+          <h1 class="dt-screen-title" id="workspace-title">
             {{ hasResult ? 'Provador pronto' : 'Montar provador' }}
           </h1>
-          <p class="dt-workspace-intro__lead">
+          <p class="dt-workspace-intro-lead">
             {{ hasResult
               ? 'Compare o resultado, salve a imagem e copie as referências.'
-              : 'Envie a foto da cliente, recorte o enquadramento e gere o look.' }}
+              : 'Envie a foto da cliente e gere o look.' }}
           </p>
         </div>
       </header>
 
       <aside
         v-if="!isFloatingLook"
-        class="dt-workspace__refs dt-glass-2"
+        class="dt-workspace-refs dt-glass-2"
         aria-label="Look selecionado"
       >
-        <div class="dt-workspace__refs-head">
-          <div class="dt-workspace__refs-title">
+        <div class="dt-workspace-refs-head">
+          <div class="dt-workspace-refs-title">
             <h2>Look</h2>
-            <span v-if="pieces.length" class="dt-workspace__refs-count">
+            <span v-if="pieces.length" class="dt-workspace-refs-count">
               {{ pieces.length }} peça{{ pieces.length > 1 ? 's' : '' }}
             </span>
           </div>
-          <div class="dt-workspace__refs-meta">
-            <span v-if="pieces.length" class="dt-workspace__refs-total">{{ formatPrice(lookTotal) }}</span>
+          <div class="dt-workspace-refs-meta">
+            <span v-if="pieces.length" class="dt-workspace-refs-total">{{ formatPrice(lookTotal) }}</span>
           </div>
         </div>
 
-        <ul v-if="pieces.length" class="dt-workspace__refs-grid">
+        <ul v-if="pieces.length" class="dt-workspace-refs-grid">
           <li
             v-for="piece in pieces"
             :key="piece.id"
-            class="dt-workspace__ref-card"
+            class="dt-workspace-ref-card"
           >
             <div
-              class="dt-media-skel dt-workspace__ref-thumb"
+              class="dt-media-skel dt-workspace-ref-thumb"
               :class="{ 'is-loaded': isImageLoaded(piece.image) }"
             >
               <img
@@ -278,10 +298,10 @@ export default {
                 @error="markImageLoaded(piece.image)"
               />
             </div>
-            <div class="dt-workspace__ref-body">
-              <span class="dt-workspace__ref-cat">{{ categoryLabel(piece.category) }}</span>
-              <div class="dt-ref-row__name">{{ piece.name }}</div>
-              <div class="dt-ref-row__ref">{{ piece.ref }}</div>
+            <div class="dt-workspace-ref-body">
+              <span class="dt-workspace-ref-cat">{{ categoryLabel(piece.category) }}</span>
+              <div class="dt-ref-row-name">{{ piece.name }}</div>
+              <div class="dt-ref-row-ref">{{ piece.ref }}</div>
             </div>
             <button
               type="button"
@@ -294,127 +314,186 @@ export default {
             </button>
           </li>
         </ul>
-        <p v-else class="dt-lookbar__hint">Nenhuma peça selecionada — edite o catálogo para continuar.</p>
+        <p v-else class="dt-lookbar-hint">Nenhuma peça selecionada — edite o catálogo para continuar.</p>
       </aside>
 
       <div class="dt-workspace" :class="{ 'dt-workspace--solo': !showResultCol, 'dt-workspace--split': showResultCol }">
-        <div class="dt-workspace__col dt-workspace__col--photo dt-glass-2">
-          <div class="dt-workspace__col-head">
-            <div class="dt-workspace__col-copy">
-              <h2>Foto enviada</h2>
-            </div>
-          </div>
+        <div class="dt-workspace-col dt-workspace-col--photo dt-glass-2">
+          <div class="dt-workspace-photo-row">
+            <div class="dt-workspace-photo-side">
+              <div class="dt-workspace-canvas dt-workspace-canvas--upload"
+                :class="{
+                  'is-ready': hasPhoto,
+                  'is-dragging': dragging,
+                  'is-processing': processing,
+                }"
+                role="button"
+                tabindex="0"
+                :aria-label="hasPhoto ? 'Trocar foto da cliente' : 'Selecionar ou arrastar foto da cliente'"
+                :aria-busy="processing ? 'true' : 'false'"
+                @dragenter.prevent="dragging = true"
+                @dragover.prevent="dragging = true"
+                @dragleave.prevent="dragging = false"
+                @drop.prevent="onDrop"
+                @keydown.enter="openPicker"
+                @keydown.space.prevent="openPicker"
+                @click="openPicker"
+              >
+                <div
+                  v-if="hasPhoto"
+                  class="dt-media-skel dt-workspace-canvas-media"
+                  :class="{ 'is-loaded': isImageLoaded(photo.url) && !processing }"
+                  :key="photo.url"
+                >
+                  <img
+                    :src="photo.url"
+                    :alt="'Preview — ' + photo.name"
+                    class="dt-workspace-canvas-img"
+                    :ref="(el) => bindImageEl(el, photo.url)"
+                    @load="markImageLoaded(photo.url)"
+                    @error="markImageLoaded(photo.url)"
+                  />
+                </div>
+                <span
+                  v-if="processing"
+                  class="dt-skel dt-skel--canvas"
+                  aria-hidden="true"
+                ></span>
 
-          <div class="dt-workspace__canvas dt-workspace__canvas--upload"
-            :class="{
-              'is-ready': hasPhoto,
-              'is-dragging': dragging,
-              'is-processing': processing,
-            }"
-            role="button"
-            tabindex="0"
-            :aria-label="hasPhoto ? 'Trocar foto da cliente' : 'Selecionar ou arrastar foto da cliente'"
-            :aria-busy="processing ? 'true' : 'false'"
-            @dragenter.prevent="dragging = true"
-            @dragover.prevent="dragging = true"
-            @dragleave.prevent="dragging = false"
-            @drop.prevent="onDrop"
-            @keydown.enter="openPicker"
-            @keydown.space.prevent="openPicker"
-            @click="openPicker"
-          >
-            <div
-              v-if="hasPhoto"
-              class="dt-media-skel dt-workspace__canvas-media"
-              :class="{ 'is-loaded': isImageLoaded(photo.url) && !processing }"
-              :key="photo.url"
-            >
-              <img
-                :src="photo.url"
-                :alt="'Preview — ' + photo.name"
-                class="dt-workspace__canvas-img"
-                :ref="(el) => bindImageEl(el, photo.url)"
-                @load="markImageLoaded(photo.url)"
-                @error="markImageLoaded(photo.url)"
-              />
-            </div>
-            <span
-              v-if="processing"
-              class="dt-skel dt-skel--canvas"
-              aria-hidden="true"
-            ></span>
+                <div class="dt-workspace-canvas-overlay" :class="{ 'is-empty': !hasPhoto }">
+                  <div class="dt-workspace-canvas-cta">
+                    <span class="dt-workspace-canvas-icon" aria-hidden="true">
+                      <span class="material-symbols-outlined dt-icon dt-icon--lg">upload</span>
+                    </span>
+                    <strong>
+                      {{ processing ? 'Processando…' : (hasPhoto ? 'Trocar foto' : 'Selecionar ou arrastar foto') }}
+                    </strong>
+                    <span v-if="!hasPhoto">JPG, PNG ou WEBP · até 12 MB · recorte opcional</span>
+                  </div>
+                </div>
 
-            <div class="dt-workspace__canvas-overlay" :class="{ 'is-empty': !hasPhoto }">
-              <div class="dt-workspace__canvas-cta">
-                <span class="dt-workspace__canvas-icon" aria-hidden="true">
-                  <span class="material-symbols-outlined dt-icon dt-icon--lg">upload</span>
-                </span>
-                <strong>
-                  {{ processing ? 'Processando…' : (hasPhoto ? 'Trocar foto' : 'Selecionar ou arrastar foto') }}
-                </strong>
-                <span v-if="!hasPhoto">JPG, PNG ou WEBP · até 12 MB · recorte 9:16</span>
+                <input
+                  ref="inputRef"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  aria-label="Selecionar foto da cliente"
+                  :disabled="processing || generating || cropping"
+                  @change="onFileChange"
+                  @click.stop
+                />
+              </div>
+
+              <div v-if="hasPhoto" class="dt-workspace-photo-actions">
+                <button
+                  type="button"
+                  class="dt-btn dt-btn--ghost"
+                  :disabled="generating || processing || cropping"
+                  @click="openCrop"
+                >
+                  <span class="material-symbols-outlined dt-icon" aria-hidden="true">crop</span>
+                  Recortar
+                </button>
+                <button
+                  type="button"
+                  class="dt-btn dt-btn--ghost"
+                  :disabled="generating || processing || cropping"
+                  @click="openPicker"
+                >
+                  <span class="material-symbols-outlined dt-icon" aria-hidden="true">swap_horiz</span>
+                  Trocar
+                </button>
+                <button
+                  type="button"
+                  class="dt-btn dt-btn--ghost"
+                  :disabled="generating || processing || cropping"
+                  @click="clearPhoto"
+                >
+                  <span class="material-symbols-outlined dt-icon" aria-hidden="true">delete</span>
+                  Remover
+                </button>
               </div>
             </div>
 
-            <input
-              ref="inputRef"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              aria-label="Selecionar foto da cliente"
-              :disabled="processing || generating || cropping"
-              @change="onFileChange"
-              @click.stop
-            />
+            <aside
+              class="dt-measures"
+              :class="{ 'is-locked': measuresLocked }"
+              aria-labelledby="dt-measures-title"
+            >
+              <div class="dt-measures-main">
+                <div class="dt-measures-head">
+                  <h3 id="dt-measures-title">Medidas da cliente</h3>
+                  <p>
+                    {{ measuresLocked
+                      ? 'Travadas após a geração do look.'
+                      : 'Informe altura, peso e idade antes de gerar o look.' }}
+                  </p>
+                </div>
+
+                <div class="dt-measures-fields">
+                  <label class="dt-measures-field">
+                    <span>Altura (cm)</span>
+                    <input
+                      type="number"
+                      inputmode="numeric"
+                      min="100"
+                      max="250"
+                      step="1"
+                      placeholder="ex. 165"
+                      :value="measures.heightCm"
+                      :disabled="measuresLocked"
+                      @input="updateMeasure('heightCm', $event)"
+                    />
+                  </label>
+                  <label class="dt-measures-field">
+                    <span>Peso (kg)</span>
+                    <input
+                      type="number"
+                      inputmode="decimal"
+                      min="30"
+                      max="250"
+                      step="1"
+                      placeholder="ex. 62"
+                      :value="measures.weightKg"
+                      :disabled="measuresLocked"
+                      @input="updateMeasure('weightKg', $event)"
+                    />
+                  </label>
+                  <label class="dt-measures-field">
+                    <span>Idade</span>
+                    <input
+                      type="number"
+                      inputmode="numeric"
+                      min="10"
+                      max="100"
+                      step="1"
+                      placeholder="ex. 28"
+                      :value="measures.age"
+                      :disabled="measuresLocked"
+                      @input="updateMeasure('age', $event)"
+                    />
+                  </label>
+                </div>
+              </div>
+            </aside>
           </div>
 
-          <div v-if="hasPhoto" class="dt-workspace__photo-actions">
-            <button
-              type="button"
-              class="dt-btn dt-btn--ghost dt-btn--sm"
-              :disabled="generating || processing || cropping"
-              @click="openCrop"
-            >
-              <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">crop</span>
-              Recortar
-            </button>
-            <button
-              type="button"
-              class="dt-btn dt-btn--ghost dt-btn--sm"
-              :disabled="generating || processing || cropping"
-              @click="openPicker"
-            >
-              <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">swap_horiz</span>
-              Trocar
-            </button>
-            <button
-              type="button"
-              class="dt-btn dt-btn--ghost dt-btn--sm"
-              :disabled="generating || processing || cropping"
-              @click="clearPhoto"
-            >
-              <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">delete</span>
-              Remover
-            </button>
-          </div>
-
-          <div class="dt-workspace__footer">
-            <p v-if="error" class="dt-upload__error" role="alert">{{ error }}</p>
-            <p v-else class="dt-lookbar__hint">{{ statusHint }}</p>
+          <div class="dt-workspace-footer">
+            <p v-if="error" class="dt-upload-error" role="alert">{{ error }}</p>
           </div>
         </div>
 
         <div
           v-if="showResultCol"
-          class="dt-workspace__col dt-workspace__col--result dt-glass-2"
+          class="dt-workspace-col dt-workspace-col--result dt-glass-2"
         >
-          <div class="dt-workspace__col-head">
-            <div class="dt-workspace__col-copy">
+          <div class="dt-workspace-col-head">
+            <div class="dt-workspace-col-copy">
               <h2>Resultado</h2>
             </div>
             <button
               v-if="hasResult"
               type="button"
-              class="dt-btn dt-btn--ghost dt-btn--sm dt-workspace__favorite"
+              class="dt-btn dt-btn--ghost dt-btn--sm dt-workspace-favorite"
               :class="{ 'is-favorited': lookFavorited }"
               :aria-pressed="lookFavorited ? 'true' : 'false'"
               :aria-label="lookFavorited ? 'Remover look dos favoritos' : 'Favoritar look'"
@@ -432,13 +511,13 @@ export default {
           </div>
 
           <div
-            class="dt-workspace__canvas dt-workspace__canvas--result"
+            class="dt-workspace-canvas dt-workspace-canvas--result"
             :class="{ 'is-ready': hasResult && !generating }"
             :aria-busy="generating ? 'true' : 'false'"
           >
             <div
               v-if="hasResult"
-              class="dt-media-skel dt-workspace__canvas-media"
+              class="dt-media-skel dt-workspace-canvas-media"
               :class="{ 'is-loaded': isImageLoaded(resultUrl) && !generating }"
             >
               <img
@@ -451,11 +530,11 @@ export default {
             </div>
             <div
               v-if="hasResult && !generating"
-              class="dt-workspace__copy-image"
+              class="dt-workspace-copy-image"
             >
               <button
                 type="button"
-                class="dt-btn dt-btn--primary dt-workspace__copy-image-btn"
+                class="dt-btn dt-btn--primary dt-workspace-copy-image-btn"
                 :class="{ 'is-success': copiedImage }"
                 @click="$emit('copy-image')"
               >
@@ -475,7 +554,7 @@ export default {
       </div>
 
       <Teleport to="body">
-        <div ref="dockStackRef" class="dt-workspace__dock-stack">
+        <div ref="dockStackRef" class="dt-workspace-dock-stack">
           <LookFloatingBar
             v-if="isFloatingLook"
             :pieces="pieces"
@@ -484,12 +563,12 @@ export default {
           />
 
           <div
-            class="dt-workspace__dock"
+            class="dt-workspace-dock"
             role="toolbar"
             aria-label="Ações do atendimento"
           >
-            <div class="dt-workspace__dock-bar">
-              <div class="dt-workspace__dock-tools">
+            <div class="dt-workspace-dock-bar">
+              <div class="dt-workspace-dock-tools">
                 <button
                   type="button"
                   class="dt-btn dt-btn--ghost dt-btn--sm"
@@ -501,8 +580,8 @@ export default {
                 </button>
               </div>
 
-              <div class="dt-workspace__dock-cta">
-                <div class="dt-workspace__dock-actions">
+              <div class="dt-workspace-dock-cta">
+                <div class="dt-workspace-dock-actions">
                   <button
                     type="button"
                     class="dt-btn"
