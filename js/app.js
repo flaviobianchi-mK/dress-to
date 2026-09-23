@@ -20,6 +20,7 @@ import {
   isFavorite,
   createLookRecord,
 } from './looks-store.js';
+import { exampleSizeForIndex } from './size-recommend.js';
 
 const { createApp, ref, computed, watch, nextTick } = Vue;
 
@@ -406,7 +407,16 @@ createApp({
         id: currentLookId.value,
         createdAt: Date.now(),
         resultUrl: resultUrl.value,
-        pieces: pieces.value.map((p) => ({ ...p })),
+        pieces: pieces.value.map((p, index) => ({
+          id: p.id,
+          ref: p.ref,
+          name: p.name,
+          category: p.category,
+          color: p.color,
+          price: p.price,
+          image: p.image,
+          recommendedSize: p.recommendedSize || exampleSizeForIndex(index),
+        })),
       };
 
       if (lookFavorited.value) {

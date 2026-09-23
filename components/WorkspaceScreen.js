@@ -7,6 +7,7 @@ import {
   loadImageFromBlob,
   PHOTO_MAX_BYTES,
 } from '../js/image.js';
+import { buildSizeRecommendations } from '../js/size-recommend.js';
 import PhotoCropModal from './PhotoCropModal.js';
 import LookFloatingBar from './LookFloatingBar.js';
 
@@ -82,6 +83,11 @@ export default {
 
     const generateLabel = computed(() =>
       hasResult.value ? 'Gerar novamente' : 'Gerar look',
+    );
+
+    /** Stub até tabelas Dress To — uma linha por peça do look. */
+    const sizeRecommendations = computed(() =>
+      buildSizeRecommendations(pieces.value),
     );
 
     function updateMeasure(key, event) {
@@ -222,6 +228,7 @@ export default {
       measuresLocked,
       isFloatingLook,
       pieces,
+      sizeRecommendations,
       lookTotal,
       canGenerate,
       generateLabel,
@@ -253,7 +260,7 @@ export default {
       <header class="dt-workspace-intro">
         <div class="dt-workspace-intro-copy">
           <h1 class="dt-screen-title" id="workspace-title">
-            {{ hasResult ? 'Provador pronto' : 'Montar provador' }}
+            {{ hasResult ? 'Look e foto prontos' : 'Montar provador' }}
           </h1>
           <p class="dt-workspace-intro-lead">
             {{ hasResult
@@ -474,6 +481,50 @@ export default {
                   </label>
                 </div>
               </div>
+
+              <div
+                class="dt-size-recs"
+                role="region"
+                aria-labelledby="dt-size-recs-title"
+              >
+                <div class="dt-size-recs-head">
+                  <h4 id="dt-size-recs-title">Recomendação de tamanho</h4>
+                  <p>Uma sugestão por peça do look.</p>
+                </div>
+
+                <ul v-if="sizeRecommendations.length" class="dt-size-recs-list">
+                  <li
+                    v-for="item in sizeRecommendations"
+                    :key="item.piece.id"
+                    class="dt-size-rec"
+                  >
+                    <div
+                      class="dt-media-skel dt-size-rec-thumb"
+                      :class="{ 'is-loaded': isImageLoaded(item.piece.image) }"
+                    >
+                      <img
+                        :src="item.piece.image"
+                        :alt="item.piece.name"
+                        :ref="(el) => bindImageEl(el, item.piece.image)"
+                        @load="markImageLoaded(item.piece.image)"
+                        @error="markImageLoaded(item.piece.image)"
+                      />
+                    </div>
+                    <div class="dt-size-rec-body">
+                      <span class="dt-size-rec-cat">{{ item.pieceLabel }}</span>
+                      <div class="dt-size-rec-name">{{ item.piece.name }}</div>
+                    </div>
+                    <strong
+                      class="dt-size-rec-size"
+                      :class="{ 'is-pending': item.pending }"
+                    >{{ item.sizeLabel }}</strong>
+                  </li>
+                </ul>
+
+                <p v-else class="dt-size-recs-empty">
+                  Adicione peças no catálogo para ver a recomendação de cada uma.
+                </p>
+              </div>
             </aside>
           </div>
 
@@ -510,24 +561,32 @@ export default {
             </button>
           </div>
 
-          <div
-            class="dt-workspace-canvas dt-workspace-canvas--result"
-            :class="{ 'is-ready': hasResult && !generating }"
-            :aria-busy="generating ? 'true' : 'false'"
-          >
+          <div class="dt-workspace-result-stage">
             <div
-              v-if="hasResult"
-              class="dt-media-skel dt-workspace-canvas-media"
-              :class="{ 'is-loaded': isImageLoaded(resultUrl) && !generating }"
+              class="dt-workspace-canvas dt-workspace-canvas--result"
+              :class="{ 'is-ready': hasResult && !generating }"
+              :aria-busy="generating ? 'true' : 'false'"
             >
-              <img
-                :src="resultUrl"
-                alt="Imagem gerada do provador virtual"
-                :ref="(el) => bindImageEl(el, resultUrl)"
-                @load="markImageLoaded(resultUrl)"
-                @error="markImageLoaded(resultUrl)"
-              />
+              <div
+                v-if="hasResult"
+                class="dt-media-skel dt-workspace-canvas-media"
+                :class="{ 'is-loaded': isImageLoaded(resultUrl) && !generating }"
+              >
+                <img
+                  :src="resultUrl"
+                  alt="Imagem gerada do provador virtual"
+                  :ref="(el) => bindImageEl(el, resultUrl)"
+                  @load="markImageLoaded(resultUrl)"
+                  @error="markImageLoaded(resultUrl)"
+                />
+              </div>
+              <span
+                v-if="generating || !hasResult"
+                class="dt-skel dt-skel--canvas"
+                aria-hidden="true"
+              ></span>
             </div>
+
             <div
               v-if="hasResult && !generating"
               class="dt-workspace-copy-image"
@@ -544,11 +603,6 @@ export default {
                 {{ copiedImage ? 'Imagem copiada' : 'Copiar imagem' }}
               </button>
             </div>
-            <span
-              v-if="generating || !hasResult"
-              class="dt-skel dt-skel--canvas"
-              aria-hidden="true"
-            ></span>
           </div>
         </div>
       </div>

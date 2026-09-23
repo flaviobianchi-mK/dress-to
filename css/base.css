@@ -110,8 +110,13 @@ a { color: inherit; }
 }
 
 .dt-header-nav-btn.is-active {
-  color: var(--mkf-pink);
-  background: var(--mkf-pink-soft);
+  color: var(--mkf-ink);
+  background: var(--mkf-surface-muted);
+}
+
+.dt-header-nav-btn.is-active .dt-header-nav-count {
+  color: var(--mkf-ink);
+  background: var(--mkf-line-strong);
 }
 
 .dt-header-nav-count {

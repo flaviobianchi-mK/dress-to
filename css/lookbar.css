@@ -14,7 +14,7 @@
   background: var(--mkf-white);
 }
 
-/* Stage lookbar hosts the filter panel in-flow above the search bar */
+/* Stage lookbar: search bar on top; filter panel opens below it */
 .dt-lookbar.dt-lookbar--stage {
   position: static;
   top: auto;

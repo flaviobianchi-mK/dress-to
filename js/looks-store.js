@@ -1,3 +1,5 @@
+import { exampleSizeForIndex } from './size-recommend.js';
+
 const HISTORY_KEY = 'dt-looks-history';
 const FAVORITES_KEY = 'dt-looks-favorites';
 const MAX_HISTORY = 24;
@@ -22,7 +24,7 @@ function writeList(key, list) {
 }
 
 function snapshotPieces(pieces) {
-  return (pieces || []).map((p) => ({
+  return (pieces || []).map((p, index) => ({
     id: p.id,
     ref: p.ref,
     name: p.name,
@@ -30,6 +32,7 @@ function snapshotPieces(pieces) {
     color: p.color,
     price: p.price,
     image: p.image,
+    recommendedSize: p.recommendedSize || exampleSizeForIndex(index),
   }));
 }
 
