@@ -63,13 +63,20 @@ Login
 ### Workspace
 
 - Coluna da foto + painel de **medidas** (altura, peso, idade) + coluna do resultado (quando houver geração).
+- Conteúdo limitado a **1280px** centralizado; dock inferior alinhado à mesma largura útil.
 - Upload aplica a foto na hora; **Recortar** abre o crop 9:16 só se a shopper quiser.
-- **Recomendação de tamanho:** lista por peça (`Peça 1`, `Peça 2`…) com tamanhos de exemplo (`M` / `38` / `U`) via `js/size-recommend.js` — tabelas Dress To ainda **não calculam** de verdade.
+- **Recomendação de tamanho:** lista por peça (`Peça 1`, `Peça 2`…) com tamanhos de exemplo (`M` / `38` / `U`) via `js/size-recommend.js` — tabelas Dress To ainda **não calculam** de verdade; cada peça tem botão de copiar referência.
 - Título com resultado: **Look e foto prontos**.
-- **Copiar imagem** fica à direita do canvas do resultado (empilha abaixo no mobile).
-- Copiar imagem e referências no workspace (clipboard).
-- Recomendação de tamanho por peça com botão de copiar referência.
+- **Copiar imagem** e refs ficam no próprio workspace (clipboard) — não há barra flutuante de look.
 - Ações pós-geração: copiar imagem, salvar PNG, copiar cada `ref`, favoritar, novo atendimento.
+
+### Header e responsividade
+
+- Header: logo mk Fashion + nav (Favoritados / Histórico) + usuário + Sair. Sem label “Personal shopper · Dress To”.
+- **≥1101px:** workspace em duas colunas (foto | resultado).
+- **≤1100px (laptop estreito):** colunas empilham, página rola (sai do lock `100vh`); dock em coluna única; nav do header só com ícones.
+- **≤899px:** ajustes mais agressivos de canvas/medidas (mobile).
+- Breakpoints globais em `css/responsive.css`; regras do workspace também em `css/crop.css` e `css/workspace.css`.
 
 ### Biblioteca
 

@@ -243,7 +243,9 @@ Login de teste: qualquer email + senha.
 
 - Classes CSS em kebab-case (`dt-size-rec-size`), sem `__` BEM element.  
 - Lookbar: busca → look → filtros.  
-- Workspace: “Look e foto prontos”; copiar imagem à direita do canvas.  
+- Header: logo + nav biblioteca + sessão — sem brand-mode (“Personal shopper · Dress To”); sem `LookFloatingBar`.  
+- Workspace: conteúdo máx. **1280px**; “Look e foto prontos”; copiar imagem/refs no próprio canvas/dock.  
+- Responsivo: **≤1100px** empilha colunas do workspace e libera scroll; dock em 1 coluna; nav compacta. **≤899px** refina canvas/medidas.  
 - Biblioteca: tamanhos sugeridos nos cards.
 
 ---
