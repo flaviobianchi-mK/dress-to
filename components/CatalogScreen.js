@@ -688,6 +688,69 @@ export default {
             }"
             aria-label="Look selecionado"
           >
+            <div
+              class="dt-lookbar-search"
+              role="search"
+              aria-label="Busca, filtros e continuar"
+            >
+              <div class="dt-lookbar-search-bar">
+                <div class="dt-toolbar dt-toolbar--dock">
+                  <div class="dt-search">
+                    <span class="dt-search-icon" aria-hidden="true">
+                      <span class="material-symbols-outlined dt-icon">search</span>
+                    </span>
+                    <input
+                      ref="searchInputRef"
+                      v-model="query"
+                      type="search"
+                      placeholder="SKU, nome ou várias refs (ex: 02.08.3668_0038, 03.07.0384_0087)"
+                      aria-label="Buscar peças por nome ou SKU"
+                      @keydown.enter="onSearchEnter"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    class="dt-btn dt-btn--ghost dt-filter-trigger"
+                    :class="{ 'is-open': filtersOpen }"
+                    :aria-expanded="filtersOpen"
+                    aria-controls="dt-filter-panel-search"
+                    @click="toggleFilters"
+                  >
+                    <span class="material-symbols-outlined dt-icon" aria-hidden="true">tune</span>
+                    Filtros
+                    <span v-if="activeFilterCount" class="dt-filter-trigger-count">{{ activeFilterCount }}</span>
+                  </button>
+                </div>
+
+                <div class="dt-catalog-dock-cta">
+                  <button
+                    type="button"
+                    class="dt-btn dt-btn--primary dt-catalog-dock-continue"
+                    :disabled="!canContinue"
+                    :title="continueHint || continueLabel"
+                    @click="$emit('continue')"
+                  >
+                    <span>{{ continueLabel }}</span>
+                    <span
+                      class="material-symbols-outlined dt-icon"
+                      aria-hidden="true"
+                    >arrow_forward</span>
+                  </button>
+                </div>
+              </div>
+
+              <div v-if="activeFilterCount" class="dt-filter-chips dt-filter-chips--dock">
+                <button
+                  v-for="chip in activeFilterChips"
+                  :key="'search-chip-' + chip.group + '-' + chip.label"
+                  type="button"
+                  class="dt-chip is-active"
+                  @click="removeChip(chip)"
+                >{{ chip.label }} ×</button>
+              </div>
+
+            </div>
+
             <div class="dt-lookbar-head">
               <div class="dt-lookbar-title">Look montado</div>
             </div>
@@ -734,23 +797,18 @@ export default {
             </div>
 
             <div
-              class="dt-lookbar-search"
-              role="search"
-              aria-label="Busca, filtros e continuar"
+              class="dt-filter-collapse"
+              :class="{ 'is-open': filtersOpen }"
             >
-              <div
-                class="dt-filter-collapse"
-                :class="{ 'is-open': filtersOpen }"
-              >
-                <div class="dt-filter-collapse-clip">
-                  <div
-                    id="dt-filter-panel-search"
-                    class="dt-filter-panel dt-filter-panel--dock"
-                    role="region"
-                    aria-label="Filtros do catálogo Dress To"
-                    :aria-hidden="!filtersOpen"
-                    :inert="!filtersOpen"
-                  >
+              <div class="dt-filter-collapse-clip">
+                <div
+                  id="dt-filter-panel-search"
+                  class="dt-filter-panel dt-filter-panel--dock"
+                  role="region"
+                  aria-label="Filtros do catálogo Dress To"
+                  :aria-hidden="!filtersOpen"
+                  :inert="!filtersOpen"
+                >
                     <div class="dt-filter-mega">
                       <div
                         v-for="col in FILTER_MENU"
@@ -810,62 +868,7 @@ export default {
                 </div>
               </div>
 
-              <div v-if="activeFilterCount" class="dt-filter-chips dt-filter-chips--dock">
-                <button
-                  v-for="chip in activeFilterChips"
-                  :key="'search-chip-' + chip.group + '-' + chip.label"
-                  type="button"
-                  class="dt-chip is-active"
-                  @click="removeChip(chip)"
-                >{{ chip.label }} ×</button>
-              </div>
 
-              <div class="dt-lookbar-search-bar">
-                <div class="dt-toolbar dt-toolbar--dock">
-                  <div class="dt-search">
-                    <span class="dt-search-icon" aria-hidden="true">
-                      <span class="material-symbols-outlined dt-icon">search</span>
-                    </span>
-                    <input
-                      ref="searchInputRef"
-                      v-model="query"
-                      type="search"
-                      placeholder="SKU, nome ou várias refs (ex: 02.08.3668_0038, 03.07.0384_0087)"
-                      aria-label="Buscar peças por nome ou SKU"
-                      @keydown.enter="onSearchEnter"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    class="dt-btn dt-btn--ghost dt-filter-trigger"
-                    :class="{ 'is-open': filtersOpen }"
-                    :aria-expanded="filtersOpen"
-                    aria-controls="dt-filter-panel-search"
-                    @click="toggleFilters"
-                  >
-                    <span class="material-symbols-outlined dt-icon" aria-hidden="true">tune</span>
-                    Filtros
-                    <span v-if="activeFilterCount" class="dt-filter-trigger-count">{{ activeFilterCount }}</span>
-                  </button>
-                </div>
-
-                <div class="dt-catalog-dock-cta">
-                  <button
-                    type="button"
-                    class="dt-btn dt-btn--primary dt-catalog-dock-continue"
-                    :disabled="!canContinue"
-                    :title="continueHint || continueLabel"
-                    @click="$emit('continue')"
-                  >
-                    <span>{{ continueLabel }}</span>
-                    <span
-                      class="material-symbols-outlined dt-icon"
-                      aria-hidden="true"
-                    >arrow_forward</span>
-                  </button>
-                </div>
-              </div>
-            </div>
           </aside>
         </div>
 

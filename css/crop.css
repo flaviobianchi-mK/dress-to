@@ -362,6 +362,19 @@
     max-height: min(70vh, 720px);
   }
 
+  .dt-workspace-result-stage {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dt-workspace-copy-image {
+    justify-content: stretch;
+  }
+
+  .dt-workspace-copy-image-btn {
+    width: 100%;
+  }
+
   .dt-workspace-canvas--result.is-ready .dt-workspace-canvas-media {
     position: relative;
     inset: auto;

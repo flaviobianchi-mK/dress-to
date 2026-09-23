@@ -1,5 +1,6 @@
 import { categoryLabel, formatPrice } from '../js/catalog-data.js';
 import { formatLookDate, lookTotal } from '../js/looks-store.js';
+import { buildSizeRecommendations } from '../js/size-recommend.js';
 
 const { reactive, ref, computed } = Vue;
 
@@ -54,6 +55,10 @@ export default {
       return (look.pieces || [])
         .map((p) => p.ref)
         .join(' · ');
+    }
+
+    function sizeRecommendationsFor(look) {
+      return buildSizeRecommendations(look?.pieces);
     }
 
     function openConfirm(dialog) {
@@ -129,6 +134,7 @@ export default {
       formatLookDate,
       lookTotal,
       pieceSummary,
+      sizeRecommendationsFor,
       isLookFavorited,
       isImageLoaded,
       markImageLoaded,
@@ -212,16 +218,35 @@ export default {
 
             <p class="dt-library-refs">{{ pieceSummary(look) || 'Sem referências' }}</p>
 
-            <ul v-if="look.pieces?.length" class="dt-library-thumbs" aria-label="Peças do look">
-              <li v-for="piece in look.pieces" :key="piece.id">
-                <img :src="piece.image" :alt="piece.name" :title="piece.name" />
-              </li>
-            </ul>
+            <div
+              v-if="look.pieces?.length"
+              class="dt-library-sizes"
+              role="region"
+              :aria-label="'Recomendação de tamanho — ' + formatLookDate(look.createdAt)"
+            >
+              <span class="dt-library-sizes-label">Tamanhos sugeridos</span>
+              <ul class="dt-size-recs-list dt-size-recs-list--library">
+                <li
+                  v-for="item in sizeRecommendationsFor(look)"
+                  :key="item.piece.id"
+                  class="dt-size-rec"
+                >
+                  <div class="dt-size-rec-thumb">
+                    <img :src="item.piece.image" :alt="item.piece.name" />
+                  </div>
+                  <div class="dt-size-rec-body">
+                    <span class="dt-size-rec-cat">{{ item.pieceLabel }}</span>
+                    <div class="dt-size-rec-name">{{ item.piece.name }}</div>
+                  </div>
+                  <strong class="dt-size-rec-size">{{ item.sizeLabel }}</strong>
+                </li>
+              </ul>
+            </div>
 
             <div class="dt-library-actions">
               <button
                 type="button"
-                class="dt-btn dt-btn--primary dt-btn--sm"
+                class="dt-btn dt-btn--ghost dt-btn--sm"
                 @click="$emit('open', look)"
               >
                 Abrir look
@@ -230,16 +255,14 @@ export default {
               <button
                 type="button"
                 class="dt-btn dt-btn--ghost dt-btn--sm"
-                :class="{ 'is-favorited': isLookFavorited(look) }"
                 :aria-pressed="isLookFavorited(look) ? 'true' : 'false'"
                 :aria-label="isLookFavorited(look) ? 'Remover dos favoritos' : 'Favoritar look'"
                 @click="onFavoriteClick(look)"
               >
                 <span
                   class="material-symbols-outlined dt-icon dt-icon--sm"
-                  :class="{ 'dt-icon--fill': isLookFavorited(look) }"
                   aria-hidden="true"
-                >{{ isLookFavorited(look) ? 'favorite' : 'favorite_border' }}</span>
+                >favorite_border</span>
                 {{ isLookFavorited(look) ? 'Remover' : 'Favoritar' }}
               </button>
 
