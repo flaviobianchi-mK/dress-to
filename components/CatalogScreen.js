@@ -627,7 +627,7 @@ export default {
               Selecione peças no catálogo para montar o look.
             </li>
             <li
-              v-for="piece in selectedList"
+              v-for="(piece, index) in selectedList"
               :key="piece.id"
               class="dt-look-item"
             >
@@ -644,7 +644,7 @@ export default {
                 />
               </div>
               <div class="dt-look-item-body">
-                <span class="dt-look-item-cat">{{ categoryLabel(piece.category) }}</span>
+                <span class="dt-look-item-cat">Peça {{ index + 1 }}</span>
                 <div class="dt-look-item-name">{{ piece.name }}</div>
                 <div class="dt-card-price">{{ formatPrice(piece.price) }}</div>
               </div>
@@ -760,7 +760,7 @@ export default {
                 Seus looks aparecerão aqui.
               </li>
               <li
-                v-for="piece in selectedList"
+                v-for="(piece, index) in selectedList"
                 :key="piece.id"
                 class="dt-look-item"
               >
@@ -777,7 +777,7 @@ export default {
                   />
                 </div>
                 <div class="dt-look-item-body">
-                  <span class="dt-look-item-cat">{{ categoryLabel(piece.category) }}</span>
+                  <span class="dt-look-item-cat">Peça {{ index + 1 }}</span>
                   <div class="dt-look-item-name">{{ piece.name }}</div>
                   <div class="dt-card-price">{{ formatPrice(piece.price) }}</div>
                 </div>

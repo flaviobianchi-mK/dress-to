@@ -67,7 +67,8 @@ Login
 - **Recomendação de tamanho:** lista por peça (`Peça 1`, `Peça 2`…) com tamanhos de exemplo (`M` / `38` / `U`) via `js/size-recommend.js` — tabelas Dress To ainda **não calculam** de verdade.
 - Título com resultado: **Look e foto prontos**.
 - **Copiar imagem** fica à direita do canvas do resultado (empilha abaixo no mobile).
-- Look flutuante na base enquanto gera/copia.
+- Copiar imagem e referências no workspace (clipboard).
+- Recomendação de tamanho por peça com botão de copiar referência.
 - Ações pós-geração: copiar imagem, salvar PNG, copiar cada `ref`, favoritar, novo atendimento.
 
 ### Biblioteca

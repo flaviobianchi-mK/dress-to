@@ -6,17 +6,15 @@ export default {
     current: { type: String, required: true },
     shopperName: { type: String, default: '' },
     layoutMode: { type: String, default: 'workspace' },
-    lookPlacement: { type: String, default: 'floating' },
     showLayoutToggles: { type: Boolean, default: false },
     favoritesCount: { type: Number, default: 0 },
     historyCount: { type: Number, default: 0 },
   },
-  emits: ['logout', 'toggle-layout', 'toggle-look-placement', 'navigate'],
+  emits: ['logout', 'toggle-layout', 'navigate'],
   setup(props) {
     const isWorkspace = computed(() => props.layoutMode === 'workspace');
-    const isFloatingLook = computed(() => props.lookPlacement === 'floating');
 
-    return { isWorkspace, isFloatingLook };
+    return { isWorkspace };
   },
   template: `
     <header class="dt-header">
@@ -29,8 +27,6 @@ export default {
           alt="mk Fashion"
         />
       </div>
-
-      <div class="dt-brand-mode">Personal shopper · <span>Dress To</span></div>
 
       <div class="dt-header-actions">
         <nav class="dt-header-nav" aria-label="Biblioteca de looks">
@@ -76,22 +72,6 @@ export default {
             </span>
             <span class="dt-layout-toggle-label">
               {{ isWorkspace ? 'Tela unificada' : 'Etapas' }}
-            </span>
-          </button>
-
-          <button
-            v-if="isWorkspace"
-            type="button"
-            class="dt-layout-toggle"
-            :aria-pressed="isFloatingLook"
-            :title="isFloatingLook ? 'Look no topo (versão atual)' : 'Look flutuante acima da barra (teste)'"
-            @click="$emit('toggle-look-placement')"
-          >
-            <span class="dt-layout-toggle-track" aria-hidden="true">
-              <span class="dt-layout-toggle-thumb"></span>
-            </span>
-            <span class="dt-layout-toggle-label">
-              {{ isFloatingLook ? 'Look flutuante' : 'Look no topo' }}
             </span>
           </button>
         </template>

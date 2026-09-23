@@ -280,13 +280,8 @@
   font-size: 11px;
 }
 
+/* Laptop / desktop estreito — empilha colunas e libera scroll vertical */
 @media (max-width: 1100px) {
-  .dt-workspace-refs-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 899px) {
   html:has(.dt-main--workspace),
   body:has(.dt-main--workspace) {
     height: auto;
@@ -300,7 +295,7 @@
   }
 
   .dt-main--workspace {
-    padding: 12px 14px var(--dt-dock-clearance, 120px);
+    padding: 12px 16px var(--dt-dock-clearance, 120px);
     overflow: auto;
   }
 
@@ -309,13 +304,22 @@
     overflow: visible;
   }
 
-  .dt-workspace {
+  .dt-workspace,
+  .dt-workspace--solo,
+  .dt-workspace--split {
     grid-template-columns: 1fr;
     height: auto;
   }
 
-  .dt-workspace--solo {
-    grid-template-columns: 1fr;
+  .dt-workspace--split .dt-workspace-col--photo {
+    overflow: visible;
+  }
+
+  .dt-workspace--split .dt-workspace-col--result .dt-workspace-canvas {
+    flex: 0 1 auto;
+    height: auto;
+    min-height: 360px;
+    max-height: min(70vh, 720px);
   }
 
   .dt-workspace-photo-row {
@@ -326,7 +330,7 @@
 
   .dt-workspace-photo-side {
     width: 100%;
-    max-width: min(100%, calc(min(55vh, 640px) * 9 / 16));
+    max-width: min(100%, calc(min(60vh, 680px) * 9 / 16));
     margin-inline: auto;
   }
 
@@ -334,6 +338,24 @@
     flex: 0 0 auto;
     width: 100%;
     max-width: 100%;
+  }
+
+  .dt-workspace-refs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dt-workspace--split .dt-workspace-col--result {
+    animation-name: dt-fade-in;
+  }
+}
+
+@media (max-width: 899px) {
+  .dt-main--workspace {
+    padding: 12px 14px var(--dt-dock-clearance, 120px);
+  }
+
+  .dt-workspace-photo-side {
+    max-width: min(100%, calc(min(55vh, 640px) * 9 / 16));
   }
 
   .dt-measures {
@@ -362,17 +384,16 @@
     max-height: min(70vh, 720px);
   }
 
-  .dt-workspace-result-stage {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .dt-workspace-copy-image {
-    justify-content: stretch;
+    top: auto;
+    bottom: 12px;
+    right: 12px;
+    transform: none;
   }
 
   .dt-workspace-copy-image-btn {
-    width: 100%;
+    width: auto;
+    max-width: calc(100% - 24px);
   }
 
   .dt-workspace-canvas--result.is-ready .dt-workspace-canvas-media {
@@ -391,9 +412,5 @@
 
   .dt-workspace-refs-grid {
     grid-template-columns: 1fr;
-  }
-
-  .dt-workspace--split .dt-workspace-col--result {
-    animation-name: dt-fade-in;
   }
 }

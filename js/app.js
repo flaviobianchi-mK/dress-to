@@ -26,7 +26,6 @@ const { createApp, ref, computed, watch, nextTick } = Vue;
 
 const AUTH_KEY = 'dt-shopper-auth';
 const LAYOUT_KEY = 'dt-layout-mode';
-const LOOK_PLACEMENT_KEY = 'dt-look-placement';
 const LIBRARY_STEPS = new Set(['favorites', 'history']);
 
 /** Dev-only: reative para true para exibir os toggles no header. */
@@ -53,11 +52,6 @@ function readLayoutMode() {
   return saved === 'classic' ? 'classic' : 'workspace';
 }
 
-function readLookPlacement() {
-  const saved = sessionStorage.getItem(LOOK_PLACEMENT_KEY);
-  return saved === 'inline' ? 'inline' : 'floating';
-}
-
 function emptyMeasures() {
   return { heightCm: '', weightKg: '', age: '' };
 }
@@ -78,7 +72,6 @@ createApp({
     const shopper = ref(readAuth());
     const authenticated = computed(() => Boolean(shopper.value));
     const layoutMode = ref(SHOW_LAYOUT_TOGGLES ? readLayoutMode() : 'workspace');
-    const lookPlacement = ref(SHOW_LAYOUT_TOGGLES ? readLookPlacement() : 'floating');
 
     const step = ref('catalog');
     const previousStep = ref('catalog');
@@ -250,16 +243,6 @@ createApp({
         }
         showToast('Modo em etapas', 'success');
       }
-    }
-
-    function toggleLookPlacement() {
-      const next = lookPlacement.value === 'floating' ? 'inline' : 'floating';
-      lookPlacement.value = next;
-      sessionStorage.setItem(LOOK_PLACEMENT_KEY, next);
-      showToast(
-        next === 'floating' ? 'Look flutuante (teste)' : 'Look no topo',
-        'success',
-      );
     }
 
     function togglePiece(item) {
@@ -475,7 +458,6 @@ createApp({
       authenticated,
       shopper,
       layoutMode,
-      lookPlacement,
       showLayoutToggles: SHOW_LAYOUT_TOGGLES,
       step,
       photo,
@@ -499,7 +481,6 @@ createApp({
       backFromLibrary,
       continueFromCatalog,
       toggleLayout,
-      toggleLookPlacement,
       togglePiece,
       removePiece,
       runGeneration,
@@ -524,13 +505,11 @@ createApp({
           :current="step"
           :shopper-name="shopper?.name"
           :layout-mode="layoutMode"
-          :look-placement="lookPlacement"
           :show-layout-toggles="showLayoutToggles"
           :favorites-count="favoriteLooks.length"
           :history-count="historyLooks.length"
           @logout="logout"
           @toggle-layout="toggleLayout"
-          @toggle-look-placement="toggleLookPlacement"
           @navigate="navigate"
         />
 
@@ -621,7 +600,6 @@ createApp({
             :look-favorited="lookFavorited"
             :copied-image="copiedImage"
             :copied-ref-id="copiedRefId"
-            :look-placement="lookPlacement"
             @update:photo="photo = $event"
             @update:measures="clientMeasures = $event"
             @generate="runGeneration"
