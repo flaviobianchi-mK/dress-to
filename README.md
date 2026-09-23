@@ -1,5 +1,7 @@
 ﻿# Dress To — Fluxo assistido (mKFashion+)
 
+**Versão:** `0.0.9`
+
 Protótipo web para a **personal shopper** montar um look Dress To, gerar um provador virtual a partir da foto da cliente e copiar imagem + referências para colar no **Omnichat** (WhatsApp).
 
 Não é loja do consumidor: é **modo operador** — atendimento assistido, um look por vez.
