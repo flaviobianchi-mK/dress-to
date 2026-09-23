@@ -36,22 +36,22 @@ export default {
   },
   template: `
     <section class="dt-screen" aria-labelledby="result-title">
-      <h1 class="dt-screen__title" id="result-title">Resultado</h1>
-      <p class="dt-screen__lead">
+      <h1 class="dt-screen-title" id="result-title">Resultado</h1>
+      <p class="dt-screen-lead">
         Copie a imagem e as referências das peças para colar no Omnichat.
       </p>
 
       <div class="dt-result">
-        <div class="dt-result__side">
-          <div class="dt-result__panel dt-glass-2">
-            <div class="dt-result__panel-head">
+        <div class="dt-result-side">
+          <div class="dt-result-panel dt-glass-2">
+            <div class="dt-result-panel-head">
               <h3>Peças do look</h3>
             </div>
 
             <ul class="dt-ref-list">
               <li v-for="piece in pieces" :key="piece.id" class="dt-ref-row">
                 <div
-                  class="dt-media-skel dt-ref-row__thumb"
+                  class="dt-media-skel dt-ref-row-thumb"
                   :class="{ 'is-loaded': isImageLoaded(piece.image) }"
                 >
                   <img
@@ -62,10 +62,10 @@ export default {
                   />
                 </div>
                 <div>
-                  <div class="dt-ref-row__ref">{{ piece.ref }}</div>
-                  <div class="dt-ref-row__name">{{ piece.name }}</div>
-                  <span class="dt-look-item__cat">{{ categoryLabel(piece.category) }}</span>
-                  <div class="dt-card__price">{{ formatPrice(piece.price) }}</div>
+                  <div class="dt-ref-row-ref">{{ piece.ref }}</div>
+                  <div class="dt-ref-row-name">{{ piece.name }}</div>
+                  <span class="dt-look-item-cat">{{ categoryLabel(piece.category) }}</span>
+                  <div class="dt-card-price">{{ formatPrice(piece.price) }}</div>
                 </div>
                 <button
                   type="button"
@@ -78,7 +78,7 @@ export default {
               </li>
             </ul>
 
-            <div v-if="pieces.length" class="dt-lookbar__total" style="margin-top:16px">
+            <div v-if="pieces.length" class="dt-lookbar-total" style="margin-top:16px">
               Total · {{ formatPrice(lookTotal) }}
             </div>
           </div>
@@ -96,9 +96,9 @@ export default {
           </div>
         </div>
 
-        <div class="dt-result__media">
+        <div class="dt-result-media">
           <div
-            class="dt-result__hero dt-glass-2 dt-media-skel"
+            class="dt-result-hero dt-glass-2 dt-media-skel"
             :class="{ 'is-loaded': isImageLoaded(resultUrl) }"
           >
             <img
@@ -110,7 +110,7 @@ export default {
           </div>
           <button
             type="button"
-            class="dt-btn dt-result__copy"
+            class="dt-btn dt-result-copy"
             :class="copiedImage ? 'dt-btn--primary is-success' : 'dt-btn--primary'"
             @click="$emit('copy-image')"
           >

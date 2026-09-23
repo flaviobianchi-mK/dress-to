@@ -1,0 +1,121 @@
+/* ─────────────────────────────────────────────
+   Buttons & actions
+   ───────────────────────────────────────────── */
+
+/* ——— Buttons ——— */
+
+.dt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mkf-space-s);
+  min-height: var(--mkf-touch);
+  min-width: var(--mkf-touch);
+  padding: 9px 24px;
+  border-radius: var(--mkf-radius-cta);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  transition:
+    background var(--mkf-dur) var(--mkf-ease),
+    color var(--mkf-dur) var(--mkf-ease),
+    border-color var(--mkf-dur) var(--mkf-ease),
+    transform var(--mkf-dur) var(--mkf-ease),
+    box-shadow var(--mkf-dur) var(--mkf-ease),
+    opacity var(--mkf-dur) var(--mkf-ease);
+  user-select: none;
+}
+
+.dt-btn:focus-visible {
+  outline: 2px solid var(--mkf-pink);
+  outline-offset: 3px;
+}
+
+.dt-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.dt-btn--primary {
+  background: var(--mkf-pink);
+  color: var(--mkf-white);
+  box-shadow: var(--mkf-shadow-cta);
+}
+
+.dt-btn--primary:hover:not(:disabled) {
+  background: var(--mkf-pink-hover);
+}
+
+.dt-btn--primary:active:not(:disabled) {
+  background: var(--mkf-pink-selected);
+}
+
+.dt-btn--secondary {
+  background: var(--mkf-black-200);
+  color: var(--mkf-white);
+  box-shadow: var(--mkf-shadow-soft);
+}
+
+.dt-btn--secondary:hover:not(:disabled) {
+  background: var(--mkf-black);
+}
+
+.dt-btn--danger {
+  background: var(--mkf-alert-ink);
+  color: var(--mkf-white);
+}
+
+.dt-btn--danger:hover:not(:disabled) {
+  background: #911b14;
+}
+
+.dt-btn--ghost {
+  background: var(--mkf-white);
+  color: var(--mkf-ink);
+  border: var(--mkf-stroke-xs) solid var(--mkf-line);
+}
+
+.dt-btn--ghost:hover:not(:disabled) {
+  background: var(--mkf-surface-muted);
+  border-color: var(--mkf-line-strong);
+}
+
+.dt-btn--outline {
+  background: var(--mkf-white);
+  color: var(--mkf-ink);
+  border: var(--mkf-stroke-xs) solid var(--mkf-line);
+}
+
+.dt-btn--outline:hover:not(:disabled) {
+  background: var(--mkf-surface-muted);
+  border-color: var(--mkf-pink);
+  color: var(--mkf-pink);
+}
+
+.dt-btn--sm {
+  min-height: 36px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--mkf-radius-cta-lg);
+}
+
+.dt-btn:disabled,
+.dt-btn[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.dt-btn.is-success {
+  background: var(--mkf-success);
+  color: var(--mkf-white);
+  border-color: transparent;
+}
+
+.dt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mkf-space-m);
+  margin-top: var(--mkf-space-2xl);
+}

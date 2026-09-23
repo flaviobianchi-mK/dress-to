@@ -12,11 +12,11 @@ export default {
       aria-live="polite"
       aria-label="Geração em andamento"
     >
-      <div class="dt-loading__card dt-glass-2">
-        <div class="dt-loading__spinner" aria-hidden="true"></div>
-        <div class="dt-loading__title">Gerando look</div>
-        <div class="dt-loading__msg">{{ message }}</div>
-        <div class="dt-loading__bar" aria-hidden="true"><span></span></div>
+      <div class="dt-loading-card dt-glass-2">
+        <div class="dt-loading-spinner" aria-hidden="true"></div>
+        <div class="dt-loading-title">Gerando look</div>
+        <div class="dt-loading-msg">{{ message }}</div>
+        <div class="dt-loading-bar" aria-hidden="true"><span></span></div>
       </div>
     </div>
   `,

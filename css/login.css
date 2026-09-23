@@ -1,0 +1,161 @@
+/* ─────────────────────────────────────────────
+   Login — personal shopper
+   ───────────────────────────────────────────── */
+
+/* ——— Login (personal shopper · Figma 169:6826) ——— */
+
+.dt-app:has(.dt-login) {
+  background:
+    linear-gradient(90deg, #ffffff 0%, rgba(153, 153, 153, 0) 72%),
+    var(--mkf-bg);
+}
+
+.dt-login {
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+}
+
+.dt-login-stage {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(280px, 0.95fr);
+  gap: clamp(32px, 5vw, 72px);
+  align-items: stretch;
+  width: 100%;
+  min-height: 100vh;
+  padding: 48px 0 40px 56px;
+}
+
+.dt-login-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 28px;
+  width: min(449px, 100%);
+  padding: 24px 0 56px;
+  position: relative;
+  z-index: 1;
+}
+
+.dt-login-logo {
+  width: 210px;
+  height: 39px;
+  flex-shrink: 0;
+  margin-bottom: clamp(24px, 8vh, 72px);
+}
+
+.dt-login-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 358px;
+}
+
+.dt-login-title {
+  font-family: var(--mkf-font-display);
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #1c1d1d;
+}
+
+.dt-login-lead {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #6e6e6e;
+}
+
+.dt-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mkf-space-l);
+  width: 100%;
+  max-width: 449px;
+}
+
+.dt-login-submit {
+  width: 100%;
+  margin-top: 4px;
+  padding-left: 32px;
+  padding-right: 24px;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dt-login-submit .dt-icon {
+  font-size: 22px;
+}
+
+.dt-login-panel {
+  position: relative;
+  min-height: min(100vh - 88px, 933px);
+  align-self: center;
+  margin-right: -24px;
+}
+
+.dt-login-panel-surface {
+  position: absolute;
+  inset: 0;
+  border-radius: 80px 0 0 80px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 60% at 30% 20%, rgba(220, 11, 159, 0.18), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 80% 80%, rgba(18, 145, 226, 0.12), transparent 50%),
+    #1a1a1a;
+  box-shadow: -6px 0 76.8px rgba(0, 0, 0, 0.33);
+}
+
+.dt-login-panel-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  pointer-events: none;
+}
+
+.dt-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mkf-space-s);
+}
+
+.dt-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mkf-ink-muted);
+}
+
+.dt-field-control {
+  min-height: var(--mkf-touch);
+  padding: 0 var(--mkf-space-l);
+  border-radius: var(--mkf-radius-cta);
+  border: var(--mkf-stroke-xs) solid var(--mkf-line);
+  background: var(--mkf-white);
+  color: var(--mkf-ink);
+  transition: border-color var(--mkf-dur) var(--mkf-ease), background var(--mkf-dur) var(--mkf-ease), box-shadow var(--mkf-dur) var(--mkf-ease);
+}
+
+.dt-field-control:hover {
+  border-color: var(--mkf-line-strong);
+}
+
+.dt-field-control:focus {
+  outline: none;
+  border-color: var(--mkf-pink);
+  background: var(--mkf-white);
+  box-shadow: 0 0 0 3px var(--mkf-pink-soft);
+}
+
+.dt-login-error {
+  font-size: 13px;
+  color: var(--mkf-alert-ink);
+}

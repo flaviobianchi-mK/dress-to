@@ -48,8 +48,8 @@ export default {
   template: `
     <section class="dt-screen dt-screen--generate" aria-labelledby="generate-title">
       <header class="dt-generate-intro">
-        <h1 class="dt-screen__title" id="generate-title">Gerar provador</h1>
-        <p class="dt-screen__lead">
+        <h1 class="dt-screen-title" id="generate-title">Gerar provador</h1>
+        <p class="dt-screen-lead">
           Confira o look, ajuste as peças se precisar, e gere a imagem
           do provador virtual para enviar no Omnichat.
         </p>
@@ -58,7 +58,7 @@ export default {
       <div class="dt-generate">
         <div class="dt-summary dt-glass-2">
           <div
-            class="dt-summary__photo dt-media-skel"
+            class="dt-summary-photo dt-media-skel"
             :class="{ 'is-loaded': isImageLoaded(photo.url) }"
           >
             <img
@@ -69,8 +69,8 @@ export default {
             />
           </div>
 
-          <div class="dt-summary__head">
-            <h2 class="dt-summary__title">Peças do look</h2>
+          <div class="dt-summary-head">
+            <h2 class="dt-summary-title">Peças do look</h2>
             <button
               type="button"
               class="dt-btn dt-btn--ghost dt-btn--sm"
@@ -81,15 +81,15 @@ export default {
             </button>
           </div>
 
-          <ul v-if="pieces.length" class="dt-summary__pieces">
+          <ul v-if="pieces.length" class="dt-summary-pieces">
             <li
               v-for="piece in pieces"
               :key="piece.id"
               class="dt-look-item dt-look-item--editable"
             >
-              <div class="dt-look-item__main">
+              <div class="dt-look-item-main">
                 <div
-                  class="dt-media-skel dt-look-item__thumb"
+                  class="dt-media-skel dt-look-item-thumb"
                   :class="{ 'is-loaded': isImageLoaded(piece.image) }"
                 >
                   <img
@@ -99,15 +99,15 @@ export default {
                     @error="markImageLoaded(piece.image)"
                   />
                 </div>
-                <div class="dt-look-item__body">
-                  <span class="dt-look-item__cat">{{ categoryLabel(piece.category) }}</span>
-                  <div class="dt-look-item__name">{{ piece.name }}</div>
-                  <div class="dt-card__ref">{{ piece.ref }}</div>
-                  <div class="dt-card__price">{{ formatPrice(piece.price) }}</div>
+                <div class="dt-look-item-body">
+                  <span class="dt-look-item-cat">{{ categoryLabel(piece.category) }}</span>
+                  <div class="dt-look-item-name">{{ piece.name }}</div>
+                  <div class="dt-card-ref">{{ piece.ref }}</div>
+                  <div class="dt-card-price">{{ formatPrice(piece.price) }}</div>
                 </div>
                 <button
                   type="button"
-                  class="dt-look-item__remove"
+                  class="dt-look-item-remove"
                   :aria-label="'Remover ' + piece.name"
                   :disabled="generating"
                   @click="$emit('remove', piece.category)"
@@ -118,7 +118,7 @@ export default {
             </li>
           </ul>
 
-          <div v-else class="dt-summary__empty">
+          <div v-else class="dt-summary-empty">
             <p>Nenhuma peça no look.</p>
             <button
               type="button"
@@ -130,12 +130,12 @@ export default {
             </button>
           </div>
 
-          <div v-if="pieces.length" class="dt-lookbar__total">
+          <div v-if="pieces.length" class="dt-lookbar-total">
             Total · {{ formatPrice(lookTotal) }}
           </div>
         </div>
 
-        <div class="dt-generate__panel dt-glass-2">
+        <div class="dt-generate-panel dt-glass-2">
           <h3>Pronto para gerar</h3>
           <p>
             A geração pode levar alguns segundos. Durante o processamento,

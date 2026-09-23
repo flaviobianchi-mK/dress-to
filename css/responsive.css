@@ -1,0 +1,79 @@
+/* ─────────────────────────────────────────────
+   Responsive — breakpoints globais
+   ───────────────────────────────────────────── */
+
+/* ——— Responsive ——— */
+
+@media (max-width: 768px) {
+  .dt-header {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "brand actions"
+      "mode mode";
+    padding: var(--mkf-space-l);
+  }
+
+  .dt-brand { grid-area: brand; }
+  .dt-brand-mode { grid-area: mode; justify-self: center; }
+  .dt-header-actions { grid-area: actions; flex-wrap: wrap; justify-content: flex-end; }
+  .dt-steps {
+    grid-area: steps;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    justify-content: flex-start;
+  }
+
+  .dt-layout-toggle-label {
+    display: none;
+  }
+
+  .dt-main {
+    padding: var(--mkf-space-l);
+  }
+
+  .dt-lookbar {
+    position: static;
+  }
+
+  .dt-login-stage {
+    grid-template-columns: 1fr;
+    padding: 32px 24px 40px;
+    gap: 40px;
+    min-height: auto;
+  }
+
+  .dt-login-content {
+    width: 100%;
+    max-width: 449px;
+    margin: 0 auto;
+    padding-bottom: 0;
+  }
+
+  .dt-login-logo {
+    margin-bottom: 24px;
+    width: 168px;
+    height: auto;
+  }
+
+  .dt-login-panel {
+    min-height: 280px;
+    margin-right: 0;
+    order: -1;
+  }
+
+  .dt-login-panel-surface {
+    border-radius: 40px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+  .dt-login-stage {
+    padding-left: 40px;
+    gap: 40px;
+  }
+
+  .dt-login-panel-surface {
+    border-radius: 56px;
+  }
+}

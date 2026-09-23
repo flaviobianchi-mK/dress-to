@@ -303,22 +303,31 @@ export default {
       filtersOpen.value = !filtersOpen.value;
     }
 
-    function onFilterOutsidePointerDown(event) {
+    function onFilterOutsideClick(event) {
       if (!filtersOpen.value) return;
-      if (event.target.closest?.('.dt-catalog__dock, .dt-lookbar__search')) return;
+      // Ignore clicks inside the filter UI itself.
+      if (event.target.closest?.('.dt-catalog-dock, .dt-lookbar-search')) return;
+      // Ignore product interactions: closing on pointerdown collapses the
+      // filter panel and shifts the results list, so the subsequent click
+      // misses "Adicionar" / card toggles on the first try.
+      if (
+        event.target.closest?.(
+          '.dt-catalog-search-results, .dt-catalog, .dt-sections, .dt-catalog-skel',
+        )
+      ) {
+        return;
+      }
       filtersOpen.value = false;
     }
 
     function bindFilterOutsideClose() {
-      document.addEventListener('pointerdown', onFilterOutsidePointerDown, true);
+      // Use click (not pointerdown): pointerdown closes before click and the
+      // layout shift eats the first "Adicionar" when filters are open.
+      document.addEventListener('click', onFilterOutsideClick, true);
     }
 
     function unbindFilterOutsideClose() {
-      document.removeEventListener(
-        'pointerdown',
-        onFilterOutsidePointerDown,
-        true,
-      );
+      document.removeEventListener('click', onFilterOutsideClick, true);
     }
 
     watch(filtersOpen, (open) => {
@@ -399,11 +408,6 @@ export default {
       if (first) addPiece(first);
     }
 
-    function clearQuery() {
-      query.value = '';
-      nextTick(() => searchInputRef.value?.focus?.());
-    }
-
     onMounted(async () => {
       await new Promise((r) => setTimeout(r, 550));
       catalogLoading.value = false;
@@ -467,7 +471,6 @@ export default {
       onTogglePiece,
       addPiece,
       onSearchEnter,
-      clearQuery,
     };
   },
   template: `
@@ -480,9 +483,9 @@ export default {
         v-if="!isSearchMode"
         class="dt-catalog-top"
       >
-        <div class="dt-catalog-top__copy">
-          <h1 class="dt-screen__title" id="catalog-title">Montar o look</h1>
-          <p class="dt-screen__lead">
+        <div class="dt-catalog-top-copy">
+          <h1 class="dt-screen-title" id="catalog-title">Montar o look</h1>
+          <p class="dt-screen-lead">
             Escolha as peças do catálogo Dress To. Uma peça por categoria
             (cima, baixo, acessório).
           </p>
@@ -501,11 +504,11 @@ export default {
             <div
               v-for="section in SKELETON_SECTIONS"
               :key="'skel-' + section.id"
-              class="dt-catalog-skel__section"
+              class="dt-catalog-skel-section"
             >
-              <div class="dt-catalog-skel__head">
+              <div class="dt-catalog-skel-head">
                 <span class="dt-skel dt-skel--title" aria-hidden="true"></span>
-                <span class="dt-catalog-skel__rule" aria-hidden="true"></span>
+                <span class="dt-catalog-skel-rule" aria-hidden="true"></span>
                 <span class="dt-skel dt-skel--text-sm" style="width:24px" aria-hidden="true"></span>
               </div>
               <div class="dt-grid" :class="{ 'dt-grid--list': viewMode === 'list' }">
@@ -515,10 +518,10 @@ export default {
                   class="dt-skel-card"
                   :class="{ 'dt-skel-card--list': viewMode === 'list' }"
                 >
-                  <div class="dt-skel-card__media">
+                  <div class="dt-skel-card-media">
                     <span class="dt-skel dt-skel--media" aria-hidden="true"></span>
                   </div>
-                  <div class="dt-skel-card__body">
+                  <div class="dt-skel-card-body">
                     <span class="dt-skel dt-skel--text-sm" aria-hidden="true"></span>
                     <span class="dt-skel dt-skel--text" aria-hidden="true"></span>
                     <span class="dt-skel dt-skel--text-sm" style="width:36%" aria-hidden="true"></span>
@@ -536,10 +539,10 @@ export default {
               class="dt-section"
               :aria-labelledby="'sec-' + group.id"
             >
-              <div class="dt-section__head">
-                <h2 class="dt-section__title" :id="'sec-' + group.id">{{ group.label }}</h2>
-                <div class="dt-section__rule" aria-hidden="true"></div>
-                <span class="dt-section__count">{{ group.items.length }}</span>
+              <div class="dt-section-head">
+                <h2 class="dt-section-title" :id="'sec-' + group.id">{{ group.label }}</h2>
+                <div class="dt-section-rule" aria-hidden="true"></div>
+                <span class="dt-section-count">{{ group.items.length }}</span>
               </div>
 
               <div class="dt-grid" :class="{ 'dt-grid--list': viewMode === 'list' }">
@@ -569,7 +572,7 @@ export default {
                     @click="onTogglePiece(item)"
                   >
                     <div
-                      class="dt-card__media dt-media-skel"
+                      class="dt-card-media dt-media-skel"
                       :class="{ 'is-loaded': isImageLoaded(item.image) }"
                     >
                       <img
@@ -580,28 +583,28 @@ export default {
                         @load="markImageLoaded(item.image)"
                         @error="markImageLoaded(item.image)"
                       />
-                      <span class="dt-card__check" aria-hidden="true">
+                      <span class="dt-card-check" aria-hidden="true">
                         <span class="material-symbols-outlined dt-icon dt-icon--sm dt-icon--fill">check</span>
                       </span>
                     </div>
-                    <div class="dt-card__body">
-                      <div class="dt-card__ref">{{ item.ref }}</div>
-                      <div class="dt-card__name">{{ item.name }}</div>
-                      <div class="dt-card__meta">{{ colorLabel(item.color) }}</div>
-                      <div class="dt-card__price">{{ formatPrice(item.price) }}</div>
+                    <div class="dt-card-body">
+                      <div class="dt-card-ref">{{ item.ref }}</div>
+                      <div class="dt-card-name">{{ item.name }}</div>
+                      <div class="dt-card-meta">{{ colorLabel(item.color) }}</div>
+                      <div class="dt-card-price">{{ formatPrice(item.price) }}</div>
                     </div>
                   </button>
                 </div>
               </div>
 
-              <div v-if="canShowMore(group)" class="dt-section__more">
+              <div v-if="canShowMore(group)" class="dt-section-more">
                 <button
                   type="button"
-                  class="dt-btn dt-btn--ghost dt-section__more-btn"
+                  class="dt-btn dt-btn--ghost dt-section-more-btn"
                   @click="showMore(group.id)"
                 >
                   Ver mais
-                  <span class="dt-section__more-count">
+                  <span class="dt-section-more-count">
                     +{{ group.items.length - visibleItems(group).length }}
                   </span>
                 </button>
@@ -615,12 +618,12 @@ export default {
         </div>
 
         <aside class="dt-lookbar dt-glass-2" aria-label="Look selecionado">
-          <div class="dt-lookbar__head">
-            <div class="dt-lookbar__title">Look montado</div>
+          <div class="dt-lookbar-head">
+            <div class="dt-lookbar-title">Look montado</div>
           </div>
 
-          <ul class="dt-lookbar__list">
-            <li v-if="!selectedList.length" class="dt-lookbar__empty">
+          <ul class="dt-lookbar-list">
+            <li v-if="!selectedList.length" class="dt-lookbar-empty">
               Selecione peças no catálogo para montar o look.
             </li>
             <li
@@ -629,7 +632,7 @@ export default {
               class="dt-look-item"
             >
               <div
-                class="dt-media-skel dt-look-item__thumb"
+                class="dt-media-skel dt-look-item-thumb"
                 :class="{ 'is-loaded': isImageLoaded(piece.image) }"
               >
                 <img
@@ -640,14 +643,14 @@ export default {
                   @error="markImageLoaded(piece.image)"
                 />
               </div>
-              <div class="dt-look-item__body">
-                <span class="dt-look-item__cat">{{ categoryLabel(piece.category) }}</span>
-                <div class="dt-look-item__name">{{ piece.name }}</div>
-                <div class="dt-card__price">{{ formatPrice(piece.price) }}</div>
+              <div class="dt-look-item-body">
+                <span class="dt-look-item-cat">{{ categoryLabel(piece.category) }}</span>
+                <div class="dt-look-item-name">{{ piece.name }}</div>
+                <div class="dt-card-price">{{ formatPrice(piece.price) }}</div>
               </div>
               <button
                 type="button"
-                class="dt-look-item__remove"
+                class="dt-look-item-remove"
                 :aria-label="'Remover ' + piece.name"
                 @click="$emit('remove', piece.category)"
               >
@@ -656,7 +659,7 @@ export default {
             </li>
           </ul>
 
-          <div v-if="selectedList.length" class="dt-lookbar__total">
+          <div v-if="selectedList.length" class="dt-lookbar-total">
             Total · {{ formatPrice(lookTotal) }}
           </div>
         </aside>
@@ -668,10 +671,10 @@ export default {
         class="dt-catalog-search"
         :class="{ 'has-results': searchHasIntent }"
       >
-        <div class="dt-catalog-search__cluster">
-          <header class="dt-catalog-search__copy">
-            <h1 class="dt-screen__title" id="catalog-title">Montar o look</h1>
-            <p class="dt-screen__lead">
+        <div class="dt-catalog-search-cluster">
+          <header class="dt-catalog-search-copy">
+            <h1 class="dt-screen-title" id="catalog-title">Montar o look</h1>
+            <p class="dt-screen-lead">
               Busque por nome ou referência, adicione ao look e continue pesquisando.
               Dá para colar várias SKUs de uma vez (separadas por vírgula).
             </p>
@@ -685,12 +688,12 @@ export default {
             }"
             aria-label="Look selecionado"
           >
-            <div class="dt-lookbar__head">
-              <div class="dt-lookbar__title">Look montado</div>
+            <div class="dt-lookbar-head">
+              <div class="dt-lookbar-title">Look montado</div>
             </div>
 
-            <ul class="dt-lookbar__list dt-lookbar__list--row">
-              <li v-if="!selectedList.length" class="dt-lookbar__empty">
+            <ul class="dt-lookbar-list dt-lookbar-list--row">
+              <li v-if="!selectedList.length" class="dt-lookbar-empty">
                 Seus looks aparecerão aqui.
               </li>
               <li
@@ -699,7 +702,7 @@ export default {
                 class="dt-look-item"
               >
                 <div
-                  class="dt-media-skel dt-look-item__thumb"
+                  class="dt-media-skel dt-look-item-thumb"
                   :class="{ 'is-loaded': isImageLoaded(piece.image) }"
                 >
                   <img
@@ -710,14 +713,14 @@ export default {
                     @error="markImageLoaded(piece.image)"
                   />
                 </div>
-                <div class="dt-look-item__body">
-                  <span class="dt-look-item__cat">{{ categoryLabel(piece.category) }}</span>
-                  <div class="dt-look-item__name">{{ piece.name }}</div>
-                  <div class="dt-card__price">{{ formatPrice(piece.price) }}</div>
+                <div class="dt-look-item-body">
+                  <span class="dt-look-item-cat">{{ categoryLabel(piece.category) }}</span>
+                  <div class="dt-look-item-name">{{ piece.name }}</div>
+                  <div class="dt-card-price">{{ formatPrice(piece.price) }}</div>
                 </div>
                 <button
                   type="button"
-                  class="dt-look-item__remove"
+                  class="dt-look-item-remove"
                   :aria-label="'Remover ' + piece.name"
                   @click="$emit('remove', piece.category)"
                 >
@@ -726,12 +729,12 @@ export default {
               </li>
             </ul>
 
-            <div v-if="selectedList.length" class="dt-lookbar__total">
+            <div v-if="selectedList.length" class="dt-lookbar-total">
               Total · {{ formatPrice(lookTotal) }}
             </div>
 
             <div
-              class="dt-lookbar__search"
+              class="dt-lookbar-search"
               role="search"
               aria-label="Busca, filtros e continuar"
             >
@@ -739,7 +742,7 @@ export default {
                 class="dt-filter-collapse"
                 :class="{ 'is-open': filtersOpen }"
               >
-                <div class="dt-filter-collapse__clip">
+                <div class="dt-filter-collapse-clip">
                   <div
                     id="dt-filter-panel-search"
                     class="dt-filter-panel dt-filter-panel--dock"
@@ -752,14 +755,14 @@ export default {
                       <div
                         v-for="col in FILTER_MENU"
                         :key="'search-' + col.id"
-                        class="dt-filter-mega__col"
+                        class="dt-filter-mega-col"
                       >
-                        <h3 class="dt-filter-mega__heading">{{ col.label }}</h3>
-                        <ul class="dt-filter-mega__list">
+                        <h3 class="dt-filter-mega-heading">{{ col.label }}</h3>
+                        <ul class="dt-filter-mega-list">
                           <li v-for="item in col.items" :key="'search-' + item">
                             <button
                               type="button"
-                              class="dt-filter-mega__link"
+                              class="dt-filter-mega-link"
                               :class="{ 'is-active': isTypeActive(item) }"
                               :aria-pressed="isTypeActive(item)"
                               @click="selectType(item)"
@@ -770,13 +773,13 @@ export default {
                     </div>
 
                     <div v-if="showVestidoPanel" class="dt-filter-sub">
-                      <div class="dt-filter-mega__col">
-                        <h3 class="dt-filter-mega__heading">Vestidos</h3>
-                        <ul class="dt-filter-mega__list">
+                      <div class="dt-filter-mega-col">
+                        <h3 class="dt-filter-mega-heading">Vestidos</h3>
+                        <ul class="dt-filter-mega-list">
                           <li v-for="item in VESTIDO_FILTERS" :key="'search-v-' + item">
                             <button
                               type="button"
-                              class="dt-filter-mega__link"
+                              class="dt-filter-mega-link"
                               :class="{ 'is-active': isVestidoActive(item) }"
                               :aria-pressed="isVestidoActive(item)"
                               @click="selectVestido(item)"
@@ -786,7 +789,7 @@ export default {
                       </div>
                     </div>
 
-                    <div class="dt-filter-panel__footer">
+                    <div class="dt-filter-panel-footer">
                       <button
                         type="button"
                         class="dt-btn dt-btn--ghost dt-btn--sm"
@@ -817,10 +820,10 @@ export default {
                 >{{ chip.label }} ×</button>
               </div>
 
-              <div class="dt-lookbar__search-bar">
+              <div class="dt-lookbar-search-bar">
                 <div class="dt-toolbar dt-toolbar--dock">
                   <div class="dt-search">
-                    <span class="dt-search__icon" aria-hidden="true">
+                    <span class="dt-search-icon" aria-hidden="true">
                       <span class="material-symbols-outlined dt-icon">search</span>
                     </span>
                     <input
@@ -831,15 +834,6 @@ export default {
                       aria-label="Buscar peças por nome ou SKU"
                       @keydown.enter="onSearchEnter"
                     />
-                    <button
-                      v-if="query"
-                      type="button"
-                      class="dt-search__clear"
-                      aria-label="Limpar busca"
-                      @click="clearQuery"
-                    >
-                      <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">close</span>
-                    </button>
                   </div>
                   <button
                     type="button"
@@ -851,14 +845,14 @@ export default {
                   >
                     <span class="material-symbols-outlined dt-icon" aria-hidden="true">tune</span>
                     Filtros
-                    <span v-if="activeFilterCount" class="dt-filter-trigger__count">{{ activeFilterCount }}</span>
+                    <span v-if="activeFilterCount" class="dt-filter-trigger-count">{{ activeFilterCount }}</span>
                   </button>
                 </div>
 
-                <div class="dt-catalog__dock-cta">
+                <div class="dt-catalog-dock-cta">
                   <button
                     type="button"
-                    class="dt-btn dt-btn--primary dt-catalog__dock-continue"
+                    class="dt-btn dt-btn--primary dt-catalog-dock-continue"
                     :disabled="!canContinue"
                     :title="continueHint || continueLabel"
                     @click="$emit('continue')"
@@ -877,10 +871,10 @@ export default {
 
         <div
           v-if="searchHasIntent"
-          class="dt-catalog-search__results dt-glass-2"
+          class="dt-catalog-search-results dt-glass-2"
           :class="{ 'is-added': allAddableInLook }"
         >
-          <div class="dt-catalog-search__results-head">
+          <div class="dt-catalog-search-results-head">
             <div>
               <strong v-if="allAddableInLook">
                 {{ searchResultsInLook.length }}
@@ -895,21 +889,21 @@ export default {
             </div>
             <span
               v-if="allAddableInLook"
-              class="dt-catalog-search__added-badge"
+              class="dt-catalog-search-added-badge"
             >
               <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">check_circle</span>
               Adicionadas
             </span>
           </div>
 
-          <ul v-if="addableSearchResults.length && allAddableInLook" class="dt-catalog-search__list dt-catalog-search__list--compact" role="list">
+          <ul v-if="addableSearchResults.length && allAddableInLook" class="dt-catalog-search-list dt-catalog-search-list--compact" role="list">
             <li
               v-for="item in searchResultsInLook"
               :key="'added-' + item.id"
-              class="dt-catalog-search__chip"
+              class="dt-catalog-search-chip"
             >
               <div
-                class="dt-media-skel dt-catalog-search__chip-thumb"
+                class="dt-media-skel dt-catalog-search-chip-thumb"
                 :class="{ 'is-loaded': isImageLoaded(item.image) }"
               >
                 <img
@@ -920,13 +914,13 @@ export default {
                   @error="markImageLoaded(item.image)"
                 />
               </div>
-              <div class="dt-catalog-search__chip-meta">
-                <span class="dt-catalog-search__chip-ref">{{ item.ref }}</span>
-                <span class="dt-catalog-search__chip-name">{{ item.name }}</span>
+              <div class="dt-catalog-search-chip-meta">
+                <span class="dt-catalog-search-chip-ref">{{ item.ref }}</span>
+                <span class="dt-catalog-search-chip-name">{{ item.name }}</span>
               </div>
               <button
                 type="button"
-                class="dt-catalog-search__chip-remove"
+                class="dt-catalog-search-chip-remove"
                 :aria-label="'Remover ' + item.name + ' do look'"
                 @click="$emit('remove', item.category)"
               >
@@ -935,15 +929,15 @@ export default {
             </li>
           </ul>
 
-          <ul v-else-if="addableSearchResults.length" class="dt-catalog-search__list" role="list">
+          <ul v-else-if="addableSearchResults.length" class="dt-catalog-search-list" role="list">
             <li
               v-for="item in visibleSearchResults"
               :key="item.id"
-              class="dt-catalog-search__row"
+              class="dt-catalog-search-row"
               :class="{ 'is-selected': isSelected(item) }"
             >
               <div
-                class="dt-media-skel dt-catalog-search__thumb"
+                class="dt-media-skel dt-catalog-search-thumb"
                 :class="{ 'is-loaded': isImageLoaded(item.image) }"
               >
                 <img
@@ -955,10 +949,10 @@ export default {
                 />
               </div>
 
-              <div class="dt-catalog-search__meta">
-                <div class="dt-card__ref">{{ item.ref }}</div>
-                <div class="dt-catalog-search__name">{{ item.name }}</div>
-                <div class="dt-card__meta">
+              <div class="dt-catalog-search-meta">
+                <div class="dt-card-ref">{{ item.ref }}</div>
+                <div class="dt-catalog-search-name">{{ item.name }}</div>
+                <div class="dt-card-meta">
                   {{ categoryLabel(item.category) }} · {{ colorLabel(item.color) }} · {{ formatPrice(item.price) }}
                 </div>
               </div>
@@ -969,7 +963,7 @@ export default {
                 :class="isSelected(item) ? 'dt-btn--ghost is-favorited' : 'dt-btn--primary'"
                 @click="isSelected(item) ? $emit('remove', item.category) : addPiece(item)"
               >
-                {{ isSelected(item) ? 'No look' : 'Adicionar' }}
+                {{ isSelected(item) ? 'Remover' : 'Adicionar' }}
               </button>
             </li>
           </ul>
@@ -981,7 +975,7 @@ export default {
       <!-- Dock inferior só no modo catálogo -->
       <Teleport v-if="!isSearchMode" to="body">
         <div
-          class="dt-catalog__dock"
+          class="dt-catalog-dock"
           role="search"
           aria-label="Busca, filtros e continuar"
         >
@@ -996,14 +990,14 @@ export default {
               <div
                 v-for="col in FILTER_MENU"
                 :key="'dock-' + col.id"
-                class="dt-filter-mega__col"
+                class="dt-filter-mega-col"
               >
-                <h3 class="dt-filter-mega__heading">{{ col.label }}</h3>
-                <ul class="dt-filter-mega__list">
+                <h3 class="dt-filter-mega-heading">{{ col.label }}</h3>
+                <ul class="dt-filter-mega-list">
                   <li v-for="item in col.items" :key="'dock-' + item">
                     <button
                       type="button"
-                      class="dt-filter-mega__link"
+                      class="dt-filter-mega-link"
                       :class="{ 'is-active': isTypeActive(item) }"
                       :aria-pressed="isTypeActive(item)"
                       @click="selectType(item)"
@@ -1014,13 +1008,13 @@ export default {
             </div>
 
             <div v-if="showVestidoPanel" class="dt-filter-sub">
-              <div class="dt-filter-mega__col">
-                <h3 class="dt-filter-mega__heading">Vestidos</h3>
-                <ul class="dt-filter-mega__list">
+              <div class="dt-filter-mega-col">
+                <h3 class="dt-filter-mega-heading">Vestidos</h3>
+                <ul class="dt-filter-mega-list">
                   <li v-for="item in VESTIDO_FILTERS" :key="'dock-v-' + item">
                     <button
                       type="button"
-                      class="dt-filter-mega__link"
+                      class="dt-filter-mega-link"
                       :class="{ 'is-active': isVestidoActive(item) }"
                       :aria-pressed="isVestidoActive(item)"
                       @click="selectVestido(item)"
@@ -1030,7 +1024,7 @@ export default {
               </div>
             </div>
 
-            <div class="dt-filter-panel__footer">
+            <div class="dt-filter-panel-footer">
               <button
                 type="button"
                 class="dt-btn dt-btn--ghost dt-btn--sm"
@@ -1059,10 +1053,10 @@ export default {
             >{{ chip.label }} ×</button>
           </div>
 
-          <div class="dt-catalog__dock-bar">
+          <div class="dt-catalog-dock-bar">
             <div class="dt-toolbar dt-toolbar--dock">
               <div class="dt-search">
-                <span class="dt-search__icon" aria-hidden="true">
+                <span class="dt-search-icon" aria-hidden="true">
                   <span class="material-symbols-outlined dt-icon">search</span>
                 </span>
                 <input
@@ -1082,38 +1076,38 @@ export default {
               >
                 <span class="material-symbols-outlined dt-icon" aria-hidden="true">tune</span>
                 Filtros
-                <span v-if="activeFilterCount" class="dt-filter-trigger__count">{{ activeFilterCount }}</span>
+                <span v-if="activeFilterCount" class="dt-filter-trigger-count">{{ activeFilterCount }}</span>
               </button>
               <div class="dt-view-toggle" role="group" aria-label="Visualização do catálogo">
                 <button
                   type="button"
-                  class="dt-view-toggle__btn"
+                  class="dt-view-toggle-btn"
                   :class="{ 'is-active': viewMode === 'grid' }"
                   :aria-pressed="viewMode === 'grid'"
                   title="Grade"
                   @click="setViewMode('grid')"
                 >
                   <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">grid_view</span>
-                  <span class="dt-view-toggle__label">Grade</span>
+                  <span class="dt-view-toggle-label">Grade</span>
                 </button>
                 <button
                   type="button"
-                  class="dt-view-toggle__btn"
+                  class="dt-view-toggle-btn"
                   :class="{ 'is-active': viewMode === 'list' }"
                   :aria-pressed="viewMode === 'list'"
                   title="Lista"
                   @click="setViewMode('list')"
                 >
                   <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">view_list</span>
-                  <span class="dt-view-toggle__label">Lista</span>
+                  <span class="dt-view-toggle-label">Lista</span>
                 </button>
               </div>
             </div>
 
-            <div class="dt-catalog__dock-cta">
+            <div class="dt-catalog-dock-cta">
               <button
                 type="button"
-                class="dt-btn dt-btn--primary dt-catalog__dock-continue"
+                class="dt-btn dt-btn--primary dt-catalog-dock-continue"
                 :disabled="!canContinue"
                 :title="continueHint || continueLabel"
                 @click="$emit('continue')"

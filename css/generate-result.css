@@ -1,0 +1,224 @@
+/* ─────────────────────────────────────────────
+   Generate & result — summary, refs, copy
+   ───────────────────────────────────────────── */
+
+/* ——— Generate ——— */
+
+.dt-generate {
+  display: grid;
+  gap: var(--mkf-space-2xl);
+}
+
+@media (min-width: 900px) {
+  .dt-generate {
+    grid-template-columns: 320px 1fr;
+  }
+}
+
+.dt-summary {
+  padding: var(--mkf-space-l);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mkf-space-l);
+}
+
+.dt-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mkf-space-m);
+}
+
+.dt-summary-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--mkf-ink);
+}
+
+.dt-summary-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--mkf-space-m);
+  padding: var(--mkf-space-l);
+  border-radius: var(--mkf-radius-s);
+  background: var(--mkf-surface-muted);
+  color: var(--mkf-ink-muted);
+  font-size: 13px;
+}
+
+.dt-generate-intro .dt-screen-lead {
+  margin-bottom: 0;
+}
+
+.dt-screen--generate .dt-generate {
+  margin-top: var(--mkf-space-2xl);
+}
+
+.dt-summary-photo {
+  border-radius: var(--mkf-radius-l);
+  overflow: hidden;
+  background: var(--mkf-surface-muted);
+  aspect-ratio: 9 / 16;
+  max-width: 280px;
+}
+
+.dt-summary-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dt-summary-pieces {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mkf-space-s);
+  list-style: none;
+}
+
+.dt-generate-panel {
+  padding: var(--mkf-space-2xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mkf-space-l);
+  justify-content: center;
+  min-height: 360px;
+}
+
+.dt-generate-panel h3 {
+  font-family: var(--mkf-font-display);
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  color: var(--mkf-ink);
+}
+
+.dt-generate-panel p {
+  color: var(--mkf-ink-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 48ch;
+}
+
+/* ——— Result ——— */
+
+.dt-result {
+  display: grid;
+  gap: var(--mkf-space-2xl);
+}
+
+@media (min-width: 960px) {
+  .dt-result {
+    grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+    align-items: start;
+  }
+}
+
+.dt-result-media {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mkf-space-l);
+  min-width: 0;
+}
+
+.dt-result-hero {
+  overflow: hidden;
+  background: var(--mkf-surface-muted);
+  border-radius: var(--mkf-radius-l);
+  aspect-ratio: 9 / 16;
+  max-width: min(100%, 360px);
+  margin-inline: auto;
+  width: 100%;
+}
+
+.dt-result-hero img,
+.dt-result-hero canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  margin: 0 auto;
+}
+
+.dt-result-copy {
+  width: 100%;
+}
+
+.dt-result-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mkf-space-l);
+}
+
+.dt-result-panel {
+  padding: var(--mkf-space-l);
+}
+
+.dt-result-panel h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: var(--mkf-space-l);
+}
+
+.dt-result-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mkf-space-m);
+  margin-bottom: var(--mkf-space-l);
+}
+
+.dt-result-panel-head h3 {
+  margin-bottom: 0;
+}
+
+.dt-ref-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mkf-space-s);
+}
+
+.dt-ref-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: var(--mkf-space-m);
+  align-items: center;
+  padding: var(--mkf-space-s);
+  border-radius: var(--mkf-radius-s);
+  background: var(--mkf-surface-soft);
+  border: var(--mkf-stroke-xs) solid var(--mkf-line);
+}
+
+.dt-ref-row img,
+.dt-ref-row-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--mkf-radius-s);
+  background: var(--mkf-surface-muted);
+  flex-shrink: 0;
+}
+
+.dt-ref-row-thumb {
+  overflow: hidden;
+}
+
+.dt-ref-row-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.dt-ref-row-ref {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1c1c1c;
+  letter-spacing: 0.03em;
+}
+
+.dt-ref-row-name {
+  font-size: 13px;
+  color: var(--mkf-ink-muted);
+}

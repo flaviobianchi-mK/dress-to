@@ -141,26 +141,26 @@ export default {
   },
   template: `
     <section class="dt-screen dt-screen--library" :aria-labelledby="mode + '-title'">
-      <header class="dt-library__header">
+      <header class="dt-library-header">
         <button
           type="button"
-          class="dt-btn dt-btn--ghost dt-btn--sm dt-library__back"
+          class="dt-btn dt-btn--ghost dt-btn--sm dt-library-back"
           @click="$emit('back')"
         >
           <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">arrow_back</span>
           Voltar ao atendimento
         </button>
 
-        <div class="dt-library__intro">
-          <div class="dt-library__heading">
-            <h1 class="dt-screen__title" :id="mode + '-title'">{{ title }}</h1>
-            <p class="dt-screen__lead">{{ lead }}</p>
+        <div class="dt-library-intro">
+          <div class="dt-library-heading">
+            <h1 class="dt-screen-title" :id="mode + '-title'">{{ title }}</h1>
+            <p class="dt-screen-lead">{{ lead }}</p>
           </div>
 
           <button
             v-if="!isFavorites && items.length"
             type="button"
-            class="dt-btn dt-btn--ghost dt-btn--sm dt-library__clear"
+            class="dt-btn dt-btn--ghost dt-btn--sm dt-library-clear"
             @click="requestClear"
           >
             <span class="material-symbols-outlined dt-icon dt-icon--sm" aria-hidden="true">delete_sweep</span>
@@ -169,9 +169,9 @@ export default {
         </div>
       </header>
 
-      <div v-if="!items.length" class="dt-library__empty dt-glass-2" role="status">
+      <div v-if="!items.length" class="dt-library-empty dt-glass-2" role="status">
         <span
-          class="material-symbols-outlined dt-icon dt-library__empty-icon"
+          class="material-symbols-outlined dt-icon dt-library-empty-icon"
           :class="{ 'dt-icon--fill': isFavorites }"
           aria-hidden="true"
         >{{ isFavorites ? 'favorite' : 'history' }}</span>
@@ -182,11 +182,11 @@ export default {
         </button>
       </div>
 
-      <ul v-else class="dt-library__grid" role="list">
-        <li v-for="look in items" :key="look.id" class="dt-library__card dt-glass-2">
+      <ul v-else class="dt-library-grid" role="list">
+        <li v-for="look in items" :key="look.id" class="dt-library-card dt-glass-2">
           <button
             type="button"
-            class="dt-library__media dt-media-skel"
+            class="dt-library-media dt-media-skel"
             :class="{ 'is-loaded': isImageLoaded(look.resultUrl) }"
             :aria-label="'Abrir look de ' + formatLookDate(look.createdAt)"
             @click="$emit('open', look)"
@@ -199,8 +199,8 @@ export default {
             />
           </button>
 
-          <div class="dt-library__body">
-            <div class="dt-library__meta">
+          <div class="dt-library-body">
+            <div class="dt-library-meta">
               <time :datetime="new Date(look.createdAt).toISOString()">
                 {{ formatLookDate(look.createdAt) }}
               </time>
@@ -210,15 +210,15 @@ export default {
               </span>
             </div>
 
-            <p class="dt-library__refs">{{ pieceSummary(look) || 'Sem referências' }}</p>
+            <p class="dt-library-refs">{{ pieceSummary(look) || 'Sem referências' }}</p>
 
-            <ul v-if="look.pieces?.length" class="dt-library__thumbs" aria-label="Peças do look">
+            <ul v-if="look.pieces?.length" class="dt-library-thumbs" aria-label="Peças do look">
               <li v-for="piece in look.pieces" :key="piece.id">
                 <img :src="piece.image" :alt="piece.name" :title="piece.name" />
               </li>
             </ul>
 
-            <div class="dt-library__actions">
+            <div class="dt-library-actions">
               <button
                 type="button"
                 class="dt-btn dt-btn--primary dt-btn--sm"
@@ -246,7 +246,7 @@ export default {
               <button
                 v-if="!isFavorites"
                 type="button"
-                class="dt-btn dt-btn--ghost dt-btn--sm dt-library__delete"
+                class="dt-btn dt-btn--ghost dt-btn--sm dt-library-delete"
                 aria-label="Remover do histórico"
                 @click="requestRemove(look)"
               >
@@ -266,13 +266,13 @@ export default {
           aria-labelledby="dt-confirm-title"
           @click.self="closeConfirm"
         >
-          <div class="dt-confirm__panel">
-            <div class="dt-confirm__icon" aria-hidden="true">
+          <div class="dt-confirm-panel">
+            <div class="dt-confirm-icon" aria-hidden="true">
               <span class="material-symbols-outlined dt-icon">{{ confirmDialog.type === 'unfavorite' ? 'heart_minus' : 'delete' }}</span>
             </div>
             <h2 id="dt-confirm-title">{{ confirmDialog.title }}</h2>
             <p>{{ confirmDialog.message }}</p>
-            <div class="dt-confirm__actions">
+            <div class="dt-confirm-actions">
               <button type="button" class="dt-btn dt-btn--ghost" @click="closeConfirm">
                 Cancelar
               </button>

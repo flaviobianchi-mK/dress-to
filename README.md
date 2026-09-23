@@ -10,7 +10,7 @@ Não é loja do consumidor: é **modo operador** — atendimento assistido, um l
 
 1. **Login** da shopper (protótipo: qualquer email/senha válidos).
 2. **Monta o look** buscando peças no catálogo (SKU, nome ou várias refs de uma vez).
-3. **Envia a foto** da cliente (recorte 9:16).
+3. **Envia a foto** da cliente (ajuste 9:16 automático; recorte manual opcional) e **informa medidas** (altura, peso, idade).
 4. **Gera o provador** (foto fixa de resultado no protótipo).
 5. **Copia** a imagem e as referências das peças para colar no Omnichat.
 6. **Guarda** histórico e favoritos no navegador para reabrir looks.
@@ -39,7 +39,7 @@ O layout padrão é o **workspace** (tela unificada). O modo clássico em etapas
 Login
   → Catálogo (busca + lookbar)
       → Workspace
-          · foto da cliente (upload + crop 9:16)
+          · foto da cliente (upload; crop opcional) + medidas ao lado
           · resumo do look
           · Gerar look
           · resultado: copiar imagem / salvar / copiar refs / favoritar
@@ -51,11 +51,13 @@ Login
 - Entrada principal: **busca** por nome, SKU/ref ou várias SKUs coladas (separadas por vírgula).
 - Filtros (categoria, cor, tipo) abrem na lookbar e animam no fluxo da página.
 - Resultados: marcar/adicionar peça a peça; itens já no look ficam no topo.
-- Lookbar flutuante: thumbs do look + busca + Continuar.
+- Lookbar: **busca + filtros + Continuar no topo**, depois thumbs do look.
 
 ### Workspace
 
-- Coluna da foto + coluna do resultado (quando houver geração).
+- Coluna da foto **ao lado** do painel de medidas (altura, peso, idade) + coluna do resultado (quando houver geração).
+- Upload aplica a foto na hora; **Recortar** abre o crop 9:16 só se a shopper quiser.
+- Recomendação de tamanho: UI pronta, tabelas Dress To ainda **pendentes** (sem cálculo na V1).
 - Look flutuante na base enquanto gera/copia.
 - Ações pós-geração: **Copiar imagem** (foco para Omnichat), salvar PNG, copiar cada `ref`, favoritar, novo atendimento.
 
@@ -74,7 +76,7 @@ Login
 | Camada        | Tecnologia                                      |
 |---------------|-------------------------------------------------|
 | UI            | Vue 3 (CDN `vue.global.prod.js`), Options API   |
-| Estilo        | CSS tokens + `app.css` (sem bundler)            |
+| Estilo        | CSS tokens + folhas por domínio via `app.css`   |
 | Hospedagem    | Firebase Hosting (`mkfashion-dress-to`)         |
 | Deploy        | GitHub Actions no merge em `main`               |
 
@@ -90,7 +92,24 @@ js/clipboard.js            # copiar texto/imagem + composeTryOn (mock)
 js/looks-store.js          # histórico/favoritos (localStorage)
 js/image.js                # validação/processamento de foto
 components/                # telas e UI
-css/                       # tokens, ícones, app
+css/
+  tokens.css               # design tokens
+  icons.css                # material symbols
+  app.css                  # entry: @import das folhas abaixo
+  base.css                 # reset, shell, surfaces
+  buttons.css
+  login.css
+  upload.css
+  catalog.css              # busca, filtros, grid
+  catalog-cards.css        # cards grid/list
+  lookbar.css
+  generate-result.css
+  workspace.css
+  crop.css
+  library.css
+  feedback.css             # skeleton, loading, toast
+  layout.css
+  responsive.css
 .github/workflows/         # deploy Firebase Hosting
 ```
 
@@ -99,11 +118,11 @@ css/                       # tokens, ícones, app
 | Dado              | Onde              | Chave / nota                          |
 |-------------------|-------------------|---------------------------------------|
 | Sessão shopper    | `sessionStorage`  | `dt-shopper-auth`                     |
-| Look atual        | memória (Vue)     | `selected`, `photo`, `resultUrl`      |
+| Look atual        | memória (Vue)     | `selected`, `photo`, `clientMeasures`, `resultUrl` |
 | Histórico         | `localStorage`    | `dt-looks-history` (máx. 24)          |
 | Favoritos         | `localStorage`    | `dt-looks-favorites` (máx. 24)        |
 
-Logout limpa a sessão e o look atual; histórico/favoritos permanecem no browser.
+Logout limpa a sessão, o look atual e as medidas; histórico/favoritos permanecem no browser.
 
 ### Provador virtual (mock)
 
@@ -116,7 +135,7 @@ Retorna `dataUrl` + `blob` para exibir, copiar, salvar e histórico. Trocar a im
 Valores usados: `catalog` | `workspace` | `favorites` | `history`  
 (e no modo clássico: `upload` | `generate` | `result`)
 
-Regras em `canGoTo`: workspace exige peças ou resultado; gerar exige foto + peças.
+Regras em `canGoTo`: workspace exige peças ou resultado; gerar exige foto + peças + medidas (altura/peso/idade).
 
 ---
 
@@ -150,5 +169,6 @@ PRs podem ganhar preview channel via `firebase-hosting-pull-request.yml`.
 - Login não autentica de verdade (só guarda sessão).
 - Catálogo é mock local (imagens reutilizadas em variantes).
 - Provador devolve sempre a mesma foto fixa (`assets/results/try-on-result.png`).
+- Recomendação de tamanho: UI de medidas pronta; **tabelas Dress To ainda não integradas** (sem cálculo).
 - Sem backend / Omnichat API — cópia manual via clipboard.
 - Histórico e favoritos só neste browser.
